@@ -8,23 +8,22 @@ __VERSION__ = '0.0.1'
 assert sys.version_info[0] == 3, "We require Python > 3"
 
 setup(
-    name='bookied',
+    name='bookied-sync',
     version=__VERSION__,
     description=(
-        'A daemon to keep the blockchain bookie DApp in sync (i.e., an oracle'
-        ' daemon)'
+        'Synchronized objects on the blockchain using proposals where'
+        'necessary'
     ),
     long_description=open('README.md').read(),
     download_url='https://github.com/pbsa/bookied/tarball/' + __VERSION__,
     author='Fabian Schuh',
-    author_email='Fabian@chainsquad.com',
+    author_email='Fabian.Schuh@BlockchainProjectsBV.com',
     maintainer='Fabian Schuh',
-    maintainer_email='Fabian@chainsquad.com',
+    maintainer_email='Fabian.Schuh@BlockchainProjectsBV.com',
     url='http://pbsa.info',
     keywords=['peerplays', 'bookie'],
     packages=[
-        "bookie",
-        "bookie_lookup"
+        "bookied_sync"
     ],
     classifiers=[
         'License :: OSI Approved :: MIT License',
@@ -40,16 +39,10 @@ setup(
     },
     install_requires=[
         "peerplays",
-        "prettytable",
-        "click",
         "pyyaml",
         "colorlog",
-        "flask",
-        "redis",
-        "flask-rq",
         "dateutils",
-        "bookiesports",
-        # "bookied-scrapers",
+        "bookiesports==0.0.2",
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],

@@ -11,9 +11,7 @@ from bookiesports import BookieSports
 
 
 class LookupDatabaseConfig:
-    name = "db_peerplays"
-    user = "peerplays"
-    password = "I<3storage"
+    pass
 
 
 class Lookup(dict):
@@ -25,6 +23,7 @@ class Lookup(dict):
 
     direct_buffer = None
     proposal_buffer = None
+    sports_folder = None
 
     def __init__(
         self,
@@ -62,9 +61,13 @@ class Lookup(dict):
             self.clear_proposal_buffer()
 
         # Do not reload sports if already stored in data
-        if not Lookup.data:
+        if (
+            not Lookup.data or
+            Lookup.sports_folder != sports_folder
+        ):
             # Load sports
             self.data["sports"] = BookieSports(sports_folder)
+            Lookup.sports_folder = sports_folder
 
     def set_approving_account(self, account):
         self.approving_account = account

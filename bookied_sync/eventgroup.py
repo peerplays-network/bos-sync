@@ -1,7 +1,7 @@
 import re
 import sys
-from .lookup import Lookup, LookupDatabaseConfig
 from peerplays.eventgroup import EventGroups, EventGroup
+from .lookup import Lookup, LookupDatabaseConfig
 from .exceptions import ObjectNotFoundInLookup
 from . import log
 

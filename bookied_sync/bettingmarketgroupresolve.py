@@ -75,6 +75,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                     ["1.21.259", "cancel"],
                 ]
 
+
         """
         grading = self.rules.get("grading")
         assert grading, "Rules {} have no grading!?".format(self.rules["identifier"])
