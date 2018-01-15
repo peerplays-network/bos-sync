@@ -1,0 +1,11 @@
+bookied-scrapers
+scrypt==0.7.1
+secp256k1
+pyyaml
+pytest
+coverage
+mock
+
+# Flask Redis Queue
+flask
+flask-rq
