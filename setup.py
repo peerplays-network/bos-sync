@@ -42,7 +42,7 @@ setup(
         "pyyaml",
         "colorlog",
         "dateutils",
-        "bookiesports==0.0.2",
+        "bookiesports",
     ],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
