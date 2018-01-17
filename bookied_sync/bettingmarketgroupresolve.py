@@ -1,11 +1,8 @@
 from .lookup import Lookup
 from .rule import LookupRules
-from .exceptions import MissingMandatoryValue
-from peerplays.event import Event
-from peerplays.rule import Rule
-from peerplays.asset import Asset
 from peerplays.bettingmarketgroup import (
-    BettingMarketGroups, BettingMarketGroup)
+    BettingMarketGroup
+)
 
 
 class LookupBettingMarketGroupResolve(Lookup, dict):
@@ -67,7 +64,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         """ This property constructs the resultions array to be used in the
             transactions. It takes the following form
 
-            ... code-block: js
+            .. code-block:: js
 
                 [
                     ["1.21.257", "win"],
@@ -75,10 +72,10 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                     ["1.21.259", "cancel"],
                 ]
 
-
         """
         grading = self.rules.get("grading")
-        assert grading, "Rules {} have no grading!?".format(self.rules["identifier"])
+        assert grading, "Rules {} have no grading!?".format(
+            self.rules["identifier"])
         assert "metric" in grading
         assert "resolutions" in grading
 

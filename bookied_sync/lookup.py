@@ -15,7 +15,27 @@ class LookupDatabaseConfig:
 
 
 class Lookup(dict):
+    """ This Lookup class is used as the main class which is inherited by all
+        the other classes used in this module.
 
+        It serves as:
+            * connector to the blockchain and the wallet
+            * configuration interface for accounts, etc.
+            * management of proposal and direct buffers
+            * broadcasting of buffers
+            * management of blockchain object updates (see ``update()``)
+
+        **Proposal buffers**
+
+        New proposals can contain multiple operations which are buffered
+        locally becore broadcasting.
+
+        **Direct buffers**
+
+        Direct buffers are used to allow quick approvals of existing proposals
+        without interfering with the construction of a new proposal.
+
+    """
     #: Singelton to store data and prevent rereading if Lookup is
     #: instantiated multiple times
     data = dict()
@@ -119,23 +139,6 @@ class Lookup(dict):
         from pprint import pprint
         pprint(Lookup.direct_buffer.broadcast())
         pprint(Lookup.proposal_buffer.broadcast())
-
-    def _loadyaml(self, f):
-        """ Load a YAML file
-
-            :param str f: YAML File location
-        """
-        try:
-            with open(f) as fid:
-                t = yaml.load(fid)
-            return t
-        except yaml.YAMLError as exc:
-            log.error("Error in configuration file {}: {}".format(f, exc))
-            sys.exit(1)
-        except Exception as e:
-            log.error("The file {} is required but doesn't exist! ({})".format(
-                f, e))
-            sys.exit(1)
 
     # List calls
     def list_sports(self):
@@ -364,6 +367,8 @@ class Lookup(dict):
 
     @property
     def parent_id(self):
+        """ Obtain the id of the parent object
+        """
         if hasattr(self, "parent"):
             return self.parent.id
 
@@ -386,7 +391,7 @@ class Lookup(dict):
     def is_synced(self):
         """ Test if data on chain matches lookup
         """
-        # Compare blockchain content with  lookup
+        pass
 
     def propose_new(self):
         """ Propose operation to create this object
