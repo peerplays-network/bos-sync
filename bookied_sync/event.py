@@ -252,6 +252,7 @@ class LookupEvent(Lookup, dict):
             self["start_time"],
             event_group_id=self.parent_id,
             account=self.proposing_account,
+            status=self.get("status"),
             append_to=Lookup.proposal_buffer
         )
 
