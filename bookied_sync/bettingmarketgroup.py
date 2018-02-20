@@ -90,12 +90,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         chainsdescr = bmg[prefix + "description"]
         rules_id = bmg[prefix + "rules_id"]
         event_id = bmg[prefix + "event_id"]
-        if is_update(bmg):
-            frozen = bmg["frozen"]
-            delay_bets = bmg["delay_bets"]
-        else:
-            frozen = False
-            delay_bets = False
+        status = bmg.get("status")
 
         # Test if Rules and Events exist
         # only if the id starts with 1.
@@ -111,9 +106,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             all([a in chainsdescr for a in lookupdescr]) and
             all([b in lookupdescr for b in chainsdescr]) and
             (not test_event or event_id == self.event.id) and
-            (not test_rule or rules_id == self.rules.id) and
-            (self.get("frozen", False) == frozen) and
-            (self.get("delay_bets", False) == delay_bets)
+            (not test_rule or rules_id == self.rules.id)
         ):
             return True
         return False
