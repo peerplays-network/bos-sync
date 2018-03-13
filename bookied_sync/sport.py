@@ -141,9 +141,11 @@ class LookupSport(Lookup, dict):
     def names(self):
         """ Properly format names for internal use
         """
+        names = self["name"]
+        names.update({"identifier": self["identifier"]})
         return [
             [
                 k,
                 v
-            ] for k, v in self["name"].items()
+            ] for k, v in names.items()
         ]
