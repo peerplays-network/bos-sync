@@ -1,6 +1,4 @@
-import sys
 import os
-import yaml
 from peerplays.instance import shared_peerplays_instance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
@@ -8,10 +6,6 @@ from peerplays.storage import configStorage as config
 from . import log, UPDATE_PENDING_NEW, UPDATE_PROPOSING_NEW
 from .exceptions import ObjectNotFoundError
 from bookiesports import BookieSports
-
-
-class LookupDatabaseConfig:
-    pass
 
 
 class Lookup(dict):
@@ -45,6 +39,9 @@ class Lookup(dict):
     proposal_buffer = None
     sports_folder = None
 
+    _approving_account = None
+    _proposing_account = None
+
     def __init__(
         self,
         sports_folder=None,
@@ -60,19 +57,17 @@ class Lookup(dict):
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
-        if not proposing_account:
-            if "default_account" in config:
-                proposing_account = config["default_account"]
-            else:
-                proposing_account = proposing_account
-        self.proposing_account = proposing_account
+        if not Lookup.proposing_account:
+            if not proposing_account:
+                if "default_account" in config:
+                    proposing_account = config["default_account"]
+            self.proposing_account = proposing_account
 
-        if not approving_account:
-            if "default_account" in config:
-                approving_account = config["default_account"]
-            else:
-                approving_account = approving_account
-        self.approving_account = approving_account
+        if not Lookup.approving_account:
+            if not approving_account:
+                if "default_account" in config:
+                    approving_account = config["default_account"]
+            self.approving_account = approving_account
 
         # We define two transaction buffers
         if not Lookup.direct_buffer:
@@ -89,28 +84,28 @@ class Lookup(dict):
             self.data["sports"] = BookieSports(sports_folder)
             Lookup.sports_folder = sports_folder
 
+    # Redirect those to object variables to be "static" (singeltons)
+    @property
+    def approving_account(self):
+        return Lookup._approving_account
+
+    @property
+    def proposing_account(self):
+        return Lookup._proposing_account
+
+    @approving_account.setter
+    def approving_account(self, approver):
+        Lookup._approving_account = approver
+
+    @proposing_account.setter
+    def proposing_account(self, proposer):
+        Lookup._proposing_account = proposer
+
     def set_approving_account(self, account):
         self.approving_account = account
 
     def set_proposing_account(self, account):
         self.proposing_account = account
-
-    def pack(self):
-        return dict(
-            data=dict(self.data),
-            approval_map=self.approval_map,
-            approving_account=self.approving_account,
-            proposing_account=self.proposing_account
-        )
-
-    @classmethod
-    def unpack(cls, pack):
-        inst = cls()
-        dict.__init__(inst, pack.get("data", {}))
-        inst.approval_map = pack["approval_map"]
-        inst.approving_account = pack["approving_account"]
-        inst.proposing_account = pack["proposing_account"]
-        return inst
 
     @property
     def wallet(self):
@@ -262,7 +257,8 @@ class Lookup(dict):
                 proposal = Proposal(p)
                 account = Account(self.approving_account)
                 if account["id"] not in proposal["available_active_approvals"]:
-                    log.info("Approving proposal {}".format(p))
+                    log.info("Approving proposal {} by {}".format(
+                        p, account["name"]))
                     approved_read_for_delete.append(p)
                     self.peerplays.approveproposal(
                         p,
@@ -271,7 +267,8 @@ class Lookup(dict):
                     )
                 else:
                     log.info(
-                        "Proposal {} has already been approved by us".format(p)
+                        "Proposal {} has already been approved by {}".format(
+                            p, account["name"])
                     )
 
         log.info("Approval Map: {}".format(str(Lookup.approval_map)))

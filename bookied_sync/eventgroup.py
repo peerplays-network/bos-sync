@@ -1,7 +1,7 @@
 import re
 import sys
 from peerplays.eventgroup import EventGroups, EventGroup
-from .lookup import Lookup, LookupDatabaseConfig
+from .lookup import Lookup
 from .exceptions import ObjectNotFoundInLookup
 from . import log
 
@@ -138,46 +138,6 @@ class LookupEventGroup(Lookup, dict):
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer
         )
-
-    @property
-    def events(self):
-        """ Return all events that our local database believes correspond to
-            this event group
-        """
-        try:
-            from bookied_scrapers.sinks.mysql_data_sink import MysqlDataSink
-            from bookied_scrapers.sinks.db_data_sink_model import RawGameInfo, RawEvent, RawMarketsInfo, ResolvedGameEvent
-            from playhouse.shortcuts import model_to_dict
-        except ImportError:
-            raise ImportError("Please install bookied-scrapers")
-        from .event import LookupEvent
-
-        MysqlDataSink(
-            LookupDatabaseConfig.name,
-            LookupDatabaseConfig.user,
-            LookupDatabaseConfig.password)
-        events = (
-            ResolvedGameEvent.select(
-                ResolvedGameEvent
-            ).where(
-                (ResolvedGameEvent.game == self.sport["identifier"]) &
-                (ResolvedGameEvent.league == self.eventgroup)
-            )
-        )
-        for e in events:
-            event = model_to_dict(e)
-            # Replace id since mysql uses different ids
-            event["id"] = None
-            teams = re.split(r"[:@]", event["teams"])
-            yield LookupEvent(
-                name={"en": event["teams"]},
-                teams=[t.strip() for t in teams],
-                eventgroup_identifier=event["league"],
-                sport_identifier=event["game"],
-                season={},
-                start_time=event["start_time"],
-                extra_data=event,
-            )
 
     @property
     def names(self):
