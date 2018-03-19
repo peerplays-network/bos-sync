@@ -100,6 +100,7 @@ class Lookup(dict):
     @proposing_account.setter
     def proposing_account(self, proposer):
         Lookup._proposing_account = proposer
+        self.clear_proposal_buffer()
 
     def set_approving_account(self, account):
         self.approving_account = account
