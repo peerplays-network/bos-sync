@@ -94,6 +94,7 @@ class LookupSport(Lookup, dict):
             chainsnames = sport["new_name"]
         else:
             raise ValueError
+
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames])):
             return True
@@ -141,9 +142,11 @@ class LookupSport(Lookup, dict):
     def names(self):
         """ Properly format names for internal use
         """
+        names = self["name"]
+        names.update({"identifier": self["identifier"]})
         return [
             [
                 k,
                 v
-            ] for k, v in self["name"].items()
+            ] for k, v in names.items()
         ]

@@ -90,7 +90,8 @@ class LookupBettingMarketGroup(Lookup, dict):
         chainsdescr = bmg[prefix + "description"]
         rules_id = bmg[prefix + "rules_id"]
         event_id = bmg[prefix + "event_id"]
-        status = bmg.get("status")
+        # Fixme: sync object to also include the proper status
+        #status = bmg.get("status")
 
         # Test if Rules and Events exist
         # only if the id starts with 1.

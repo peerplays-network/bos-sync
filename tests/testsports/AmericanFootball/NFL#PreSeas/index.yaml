@@ -4,6 +4,8 @@
 #        events
 # as children
 
+identifier: NFL#PreSeas
+
 name:
     en: NFL - Pre-Season
     de: NFL - Vorseason

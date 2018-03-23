@@ -55,6 +55,9 @@ class LookupEvent(Lookup, dict):
     ):
         Lookup.__init__(self)
 
+        # First try to load the data from the blockchain if id is present
+        if id and len(id.split(".")) == 3:
+            dict.update(self, dict(Event(id)))
         # Also store all the stuff in kwargs
         dict.__init__(self, extra_data)
         dict.update(self, {
@@ -137,7 +140,7 @@ class LookupEvent(Lookup, dict):
                     eventgroup_identifier=eventgroup_identifier,
                     sport_identifier=sport_identifier,
                     start_time=start_time,
-                    season={x[0]: x[1] for x in event["season"]}
+                    season={x[0]: x[1] for x in event["season"]},
                 )
 
     @property
@@ -317,3 +320,8 @@ class LookupEvent(Lookup, dict):
         """
         for bmg in self.lookup_bettingmarketgroups():
             yield LookupBettingMarketGroup(bmg, event=self)
+
+    def status_update(self, status, scores=[]):
+        from .eventstatus import LookupEventStatus
+        status = LookupEventStatus(self, status, scores=scores)
+        return status.update()
