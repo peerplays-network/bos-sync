@@ -57,17 +57,25 @@ class Lookup(dict):
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
-        if not self.proposing_account and not proposing_account:
-            if "default_account" in config:
-                proposing_account = config["default_account"]
-        else:
+        if not self.proposing_account and proposing_account:
             self.proposing_account = proposing_account
-
-        if not self.approving_account and not approving_account:
-            if "default_account" in config:
-                approving_account = config["default_account"]
+        elif self.proposing_account:
+            pass
+        elif "default_account" in config:
+            proposing_account = config["default_account"]
         else:
+            log.error("No proposing account known")
+            raise Exception("No proposing account known!")
+
+        if not self.approving_account and approving_account:
             self.approving_account = approving_account
+        elif self.approving_account:
+            pass
+        elif "default_account" in config:
+            approving_account = config["default_account"]
+        else:
+            log.error("No approving account known")
+            raise Exception("No approving account known!")
 
         # We define two transaction buffers
         if not Lookup.direct_buffer:
@@ -171,25 +179,28 @@ class Lookup(dict):
 
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id()
-            has_pending_new = self.has_pending_new()
-            if id:
-                log.error((
-                    "Object \"{}\" carries id {} on the blockchain. "
-                    "Please update your lookup"
-                ).format(self.identifier, id))
-                self["id"] = id
-            elif has_pending_new:
-                log.warn((
-                    "Object \"{}\" has pending update proposal. Approving ..."
-                ).format(self.identifier))
-                self.approve(*has_pending_new)
-                return UPDATE_PENDING_NEW
-            else:
-                log.warn((
-                    "Object \"{}\" does not exist on chain. Proposing ..."
-                ).format(self.identifier))
-                self.propose_new()
-                return UPDATE_PROPOSING_NEW
+            do_return = 0
+            for has_pending_new in self.has_pending_new():
+                if id:
+                    log.error((
+                        "Object \"{}\" carries id {} on the blockchain. "
+                        "Please update your lookup"
+                    ).format(self.identifier, id))
+                    self["id"] = id
+                elif has_pending_new:
+                    log.warn((
+                        "Object \"{}\" has pending update proposal. Approving ..."
+                    ).format(self.identifier))
+                    self.approve(*has_pending_new)
+                    do_return += 1
+                else:
+                    log.warn((
+                        "Object \"{}\" does not exist on chain. Proposing ..."
+                    ).format(self.identifier))
+                    self.propose_new()
+                    do_return += 1
+            if do_return:
+                return do_return
 
         if not self.is_synced():
             log.warn("Object not fully synced: {}: {}".format(
@@ -295,7 +306,7 @@ class Lookup(dict):
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
                     if self.test_operation_equal(op[1], proposal=proposal):
-                        return pid, oid
+                        yield pid, oid
 
     def has_buffered_new(self):
         """ This call tests if an operation is buffered for proposal
@@ -356,7 +367,9 @@ class Lookup(dict):
             return found
 
         # Try find the id in the pending on-chain proposals
-        found = self.has_pending_new()
+        # we expect the first proposalthat proposes the
+        # parent object to go through
+        found = next(self.has_pending_new())
         if found:
             return found[0]
 
