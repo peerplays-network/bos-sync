@@ -57,16 +57,16 @@ class Lookup(dict):
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
-        if not Lookup.proposing_account:
-            if not proposing_account:
-                if "default_account" in config:
-                    proposing_account = config["default_account"]
+        if not self.proposing_account and not proposing_account:
+            if "default_account" in config:
+                proposing_account = config["default_account"]
+        else:
             self.proposing_account = proposing_account
 
-        if not Lookup.approving_account:
-            if not approving_account:
-                if "default_account" in config:
-                    approving_account = config["default_account"]
+        if not self.approving_account and not approving_account:
+            if "default_account" in config:
+                approving_account = config["default_account"]
+        else:
             self.approving_account = approving_account
 
         # We define two transaction buffers
@@ -89,19 +89,21 @@ class Lookup(dict):
     def approving_account(self):
         return Lookup._approving_account
 
-    @property
-    def proposing_account(self):
-        return Lookup._proposing_account
-
     @approving_account.setter
     def approving_account(self, approver):
         Lookup._approving_account = approver
+
+    @property
+    def proposing_account(self):
+        return Lookup._proposing_account
 
     @proposing_account.setter
     def proposing_account(self, proposer):
         Lookup._proposing_account = proposer
         self.clear_proposal_buffer()
 
+    """ Legacy implementations
+    """
     def set_approving_account(self, account):
         self.approving_account = account
 

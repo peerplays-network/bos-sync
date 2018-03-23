@@ -56,7 +56,7 @@ class LookupEvent(Lookup, dict):
         Lookup.__init__(self)
 
         # First try to load the data from the blockchain if id is present
-        if id:
+        if id and len(id.split(".")) == 3:
             dict.update(self, dict(Event(id)))
         # Also store all the stuff in kwargs
         dict.__init__(self, extra_data)
@@ -141,7 +141,6 @@ class LookupEvent(Lookup, dict):
                     sport_identifier=sport_identifier,
                     start_time=start_time,
                     season={x[0]: x[1] for x in event["season"]},
-                    from_chain=True,
                 )
 
     @property
