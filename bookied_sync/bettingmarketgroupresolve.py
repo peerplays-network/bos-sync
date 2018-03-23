@@ -139,7 +139,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
 
         return ret
 
-    def test_operation_equal(self, resolve):
+    def test_operation_equal(self, resolve, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

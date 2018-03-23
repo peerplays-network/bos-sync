@@ -167,7 +167,7 @@ class LookupEvent(Lookup, dict):
             sport["identifier"],
             self["eventgroup_identifier"]))
 
-    def test_operation_equal(self, event):
+    def test_operation_equal(self, event, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

@@ -52,7 +52,7 @@ class LookupBettingMarket(Lookup, dict):
         """
         return self.parent
 
-    def test_operation_equal(self, bmg):
+    def test_operation_equal(self, bmg, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

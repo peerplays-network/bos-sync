@@ -58,7 +58,7 @@ class LookupEventGroup(Lookup, dict):
                     "Eventgroup {} not avaialble in sport {}".format(
                         eventgroup, sport))
 
-    def test_operation_equal(self, eventgroup):
+    def test_operation_equal(self, eventgroup, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

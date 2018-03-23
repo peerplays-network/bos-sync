@@ -82,7 +82,7 @@ class LookupSport(Lookup, dict):
             yield LookupBettingMarketGroup(
                 self.identifier, e)
 
-    def test_operation_equal(self, sport):
+    def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

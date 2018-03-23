@@ -27,7 +27,7 @@ class LookupRules(Lookup, dict):
             self.data["sports"][sport]["rules"][rules]
         )
 
-    def test_operation_equal(self, operation):
+    def test_operation_equal(self, operation, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

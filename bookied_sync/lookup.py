@@ -213,15 +213,17 @@ class Lookup(dict):
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)
-        ret = []
+        props = list()
         for proposal in pending_proposals:
+            ret = []
             if not proposal["id"] in Lookup.approval_map:
                 Lookup.approval_map[proposal["id"]] = {}
             for oid, operations in enumerate(proposal.proposed_operations):
                 if oid not in Lookup.approval_map[proposal["id"]]:
                     Lookup.approval_map[proposal["id"]][oid] = False
                 ret.append((operations, proposal["id"], oid))
-        return ret
+            props.append(dict(proposal=proposal, data=ret))
+        return props
 
     def get_buffered_operations(self):
         # Obtain the proposals that we have in our buffer
@@ -288,10 +290,12 @@ class Lookup(dict):
             It only returns true if the exact content is proposed
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for op, pid, oid in self.get_pending_operations():
-            if getOperationNameForId(op[0]) == self.operation_create:
-                if self.test_operation_equal(op[1]):
-                    return pid, oid
+        for proposalObject in self.get_pending_operations():
+            proposal = proposalObject["proposal"]
+            for op, pid, oid in proposalObject["data"]:
+                if getOperationNameForId(op[0]) == self.operation_create:
+                    if self.test_operation_equal(op[1], proposal=proposal):
+                        return pid, oid
 
     def has_buffered_new(self):
         """ This call tests if an operation is buffered for proposal
@@ -311,10 +315,12 @@ class Lookup(dict):
             It only returns true if the exact content is proposed
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for op, pid, oid in self.get_pending_operations():
-            if getOperationNameForId(op[0]) == self.operation_update:
-                if self.test_operation_equal(op[1]):
-                    return pid, oid
+        for proposalObject in self.get_pending_operations():
+            proposal = proposalObject["proposal"]
+            for op, pid, oid in proposalObject["data"]:
+                if getOperationNameForId(op[0]) == self.operation_update:
+                    if self.test_operation_equal(op[1], proposal=proposal):
+                        return pid, oid
 
     def has_buffered_update(self):
         """ Test if there is an update buffered locally to properly match
@@ -373,7 +379,7 @@ class Lookup(dict):
             return self.parent.id
 
     # Prototypes #############################################################
-    def test_operation_equal(self, sport):
+    def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
