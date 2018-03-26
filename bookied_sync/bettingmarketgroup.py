@@ -88,27 +88,29 @@ class LookupBettingMarketGroup(Lookup, dict):
         lookupdescr = self.description
         chainsdescr = [[]]
         prefix = "new_" if is_update(bmg) else ""
-        chainsdescr = bmg[prefix + "description"]
-        rules_id = bmg[prefix + "rules_id"]
-        event_id = bmg[prefix + "event_id"]
+        chainsdescr = bmg.get(prefix + "description")
+        rules_id = bmg.get(prefix + "rules_id")
+        event_id = bmg.get(prefix + "event_id")
         # Fixme: sync object to also include the proper status
-        #status = bmg.get("status")
+        status = bmg.get("status")
 
         # Test if Rules and Events exist
         # only if the id starts with 1.
-        test_rule = rules_id[0] == 1
+        test_rule = rules_id and rules_id[0] == 1
         if test_rule:
             Rule(rules_id)
 
-        test_event = event_id[0] == 1
+        test_event = event_id and event_id[0] == 1
         if test_event:
             Event(event_id)
+
+        test_status = bool(self.get("status"))
 
         """ We need to properly deal with the fact that betting market groups
             cannot be distinguished alone from the payload if they are bundled
             in a proposal and refer to event_id 0.0.x
         """
-        if not test_event and event_id[0] == "0" and "proposal" in kwargs:
+        if event_id and not test_event and event_id[0] == "0" and "proposal" in kwargs:
             full_proposal = kwargs.get("proposal")
             operation_id = int(event_id.split(".")[2])
             parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
@@ -119,7 +121,8 @@ class LookupBettingMarketGroup(Lookup, dict):
             all([a in chainsdescr for a in lookupdescr]) and
             all([b in lookupdescr for b in chainsdescr]) and
             (not test_event or event_id == self.event.id) and
-            (not test_rule or rules_id == self.rules.id)
+            (not test_rule or rules_id == self.rules.id) and
+            (not test_status or status == self.get(status))
         ):
             return True
         return False

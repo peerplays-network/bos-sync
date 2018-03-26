@@ -179,25 +179,32 @@ class LookupEvent(Lookup, dict):
             chainsnames = event["name"]
             event_group_id = event["event_group_id"]
             chainseason = event["season"]
+            status = event.get("status")
         elif "new_name" in event:
-            chainsnames = event["new_name"]
-            event_group_id = event["new_sport_id"]
-            chainseason = event["new_season"]
+            chainsnames = event.get("new_name")
+            event_group_id = event.get("new_sport_id")
+            chainseason = event.get("new_season")
+            status = event.get("new_status")
         else:
             raise ValueError
 
-        parts = event_group_id.split(".")
-        assert len(parts) == 3,\
-            "{} is a strange sport object id".format(event_group_id)
-        if int(parts[0]) == 0:
-            event_group_id = ""
+        test_status = self.get("status")
+
+        if event_group_id:
+            parts = event_group_id.split(".")
+            assert len(parts) == 3,\
+                "{} is a strange sport object id".format(event_group_id)
+            if int(parts[0]) == 0:
+                event_group_id = ""
 
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames]) and
                 (lookupseason and  # only test if a season is provided
                     all([b in lookupseason for b in chainseason]) and
                     all([b in chainseason for b in lookupseason])) and
-                (not event_group_id or self.parent_id == event_group_id)):
+                (not event_group_id or self.parent_id == event_group_id) and
+                (not test_status or status == self.get("status"))
+            ):
             return True
 
     def find_id(self):
