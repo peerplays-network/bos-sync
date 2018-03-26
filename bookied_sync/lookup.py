@@ -179,42 +179,44 @@ class Lookup(dict):
 
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id()
-            do_return = 0
-            for has_pending_new in self.has_pending_new():
-                if id:
-                    log.error((
-                        "Object \"{}\" carries id {} on the blockchain. "
-                        "Please update your lookup"
-                    ).format(self.identifier, id))
-                    self["id"] = id
-                elif has_pending_new:
-                    log.warn((
-                        "Object \"{}\" has pending update proposal. Approving ..."
-                    ).format(self.identifier))
-                    self.approve(*has_pending_new)
-                    do_return += 1
+            if id:
+                log.error((
+                    "Object \"{}\" carries id {} on the blockchain. "
+                    "Please update your lookup"
+                ).format(self.identifier, id))
+                self["id"] = id
+
+            else:
+                has_pending_news = self.has_pending_new()
+                if has_pending_news:
+                    for has_pending_new in has_pending_news:
+                        log.warn((
+                            "Object \"{}\" has pending update proposal. Approving ..."
+                        ).format(self.identifier))
+                        self.approve(*has_pending_new)
                 else:
+                    # If not found, nor approved, then propose
                     log.warn((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
                     self.propose_new()
-                    do_return += 1
-            if do_return:
-                return do_return
 
+        # Now test if the object is fully synced
         if not self.is_synced():
             log.warn("Object not fully synced: {}: {}".format(
                 self.__class__.__name__,
                 str(self.get("name", ""))
             ))
-            has_pending_update = self.has_pending_update()
-            if has_pending_update:
-                log.info("Object has pending update: {}: {} in {}".format(
-                    self.__class__.__name__,
-                    str(self.get("name", "")),
-                    str(has_pending_update)
-                ))
-                self.approve(*has_pending_update)
+            has_pending_updates = self.has_pending_update()
+            if has_pending_updates:
+                for has_pending_update in has_pending_updates:
+                    if has_pending_update:
+                        log.info("Object has pending update: {}: {} in {}".format(
+                            self.__class__.__name__,
+                            str(self.get("name", "")),
+                            str(has_pending_update)
+                        ))
+                        self.approve(*has_pending_update)
             else:
                 log.info("Object has no pending update, yet: {}: {}".format(
                     self.__class__.__name__,
@@ -331,7 +333,7 @@ class Lookup(dict):
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_update:
                     if self.test_operation_equal(op[1], proposal=proposal):
-                        return pid, oid
+                        yield pid, oid
 
     def has_buffered_update(self):
         """ Test if there is an update buffered locally to properly match
