@@ -1,11 +1,14 @@
 import os
+import logging
+
 from peerplays.instance import shared_peerplays_instance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
-from . import log, UPDATE_PENDING_NEW, UPDATE_PROPOSING_NEW
 from .exceptions import ObjectNotFoundError
 from bookiesports import BookieSports
+
+log = logging.getLogger()
 
 
 class Lookup(dict):
@@ -159,9 +162,8 @@ class Lookup(dict):
 
     # Update call
     def update(self):
-        """ This call makes sure that the data in the  lookup matches
-            the data on the blockchain for the object we are currenty looking
-            at.
+        """ This call makes sure that the data in the  lookup matches the data
+            on the blockchain for the object we are currenty looking at.
 
             It works like this:
 
@@ -211,11 +213,12 @@ class Lookup(dict):
             if has_pending_updates:
                 for has_pending_update in has_pending_updates:
                     if has_pending_update:
-                        log.info("Object has pending update: {}: {} in {}".format(
-                            self.__class__.__name__,
-                            str(self.get("name", "")),
-                            str(has_pending_update)
-                        ))
+                        log.info(
+                            "Object has pending update: {}: {} in {}".format(
+                                self.__class__.__name__,
+                                str(self.get("name", "")),
+                                str(has_pending_update)
+                            ))
                         self.approve(*has_pending_update)
             else:
                 log.info("Object has no pending update, yet: {}: {}".format(
