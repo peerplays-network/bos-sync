@@ -7,8 +7,7 @@ from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
 from .exceptions import ObjectNotFoundError
 from bookiesports import BookieSports
-
-log = logging.getLogger()
+from . import log
 
 
 class Lookup(dict):
@@ -182,45 +181,49 @@ class Lookup(dict):
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id()
             if id:
-                log.error((
+                log.warning((
                     "Object \"{}\" carries id {} on the blockchain. "
                     "Please update your lookup"
                 ).format(self.identifier, id))
                 self["id"] = id
 
             else:
-                has_pending_news = self.has_pending_new()
-                if has_pending_news:
-                    for has_pending_new in has_pending_news:
-                        log.warn((
-                            "Object \"{}\" has pending update proposal. Approving ..."
-                        ).format(self.identifier))
-                        self.approve(*has_pending_new)
-                else:
+                have_approved = False
+                for has_pending_new in self.has_pending_new():
+                    log.info((
+                        "Object \"{}\" has pending update proposal. Approving ..."
+                    ).format(self.identifier))
+                    have_approved = True
+                    self.approve(*has_pending_new)
+
+                if not have_approved:
                     # If not found, nor approved, then propose
-                    log.warn((
+                    log.info((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
                     self.propose_new()
 
+                # We do not need to go over for proposing an update
+                return
+
         # Now test if the object is fully synced
         if not self.is_synced():
-            log.warn("Object not fully synced: {}: {}".format(
+            log.info("Object not fully synced: {}: {}".format(
                 self.__class__.__name__,
                 str(self.get("name", ""))
             ))
-            has_pending_updates = self.has_pending_update()
-            if has_pending_updates:
-                for has_pending_update in has_pending_updates:
-                    if has_pending_update:
-                        log.info(
-                            "Object has pending update: {}: {} in {}".format(
-                                self.__class__.__name__,
-                                str(self.get("name", "")),
-                                str(has_pending_update)
-                            ))
-                        self.approve(*has_pending_update)
-            else:
+            have_approved = False
+            for has_pending_update in self.has_pending_update():
+                log.info(
+                    "Object has pending update: {}: {} in {}".format(
+                        self.__class__.__name__,
+                        str(self.get("name", "")),
+                        str(has_pending_update)
+                    ))
+                have_approved = True
+                self.approve(*has_pending_update)
+
+            if not have_approved:
                 log.info("Object has no pending update, yet: {}: {}".format(
                     self.__class__.__name__,
                     str(self.get("name", ""))
@@ -374,12 +377,12 @@ class Lookup(dict):
         # Try find the id in the pending on-chain proposals
         # we expect the first proposalthat proposes the
         # parent object to go through
-        found = next(self.has_pending_new())
+        found = list(self.has_pending_new())
         if found:
-            return found[0]
+            return found[0][0]  # first element of first return tuple
 
         # Try find the id in the locally buffered proposals
-        found = self.has_buffered_new()
+        found = self.has_buffered_new()  # not a generator
         if found:
             return found[1]
 

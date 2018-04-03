@@ -188,7 +188,7 @@ class LookupEvent(Lookup, dict):
         else:
             raise ValueError
 
-        test_status = self.get("status")
+        test_status = self.get("status") and event.get("status")
 
         if event_group_id:
             parts = event_group_id.split(".")
@@ -203,8 +203,7 @@ class LookupEvent(Lookup, dict):
                     all([b in lookupseason for b in chainseason]) and
                     all([b in chainseason for b in lookupseason])) and
                 (not event_group_id or self.parent_id == event_group_id) and
-                (not test_status or status == self.get("status"))
-            ):
+                (not test_status or status == self.get("status"))):
             return True
 
     def find_id(self):

@@ -55,7 +55,7 @@ class LookupEventGroup(Lookup, dict):
 
             if not found:
                 raise ObjectNotFoundInLookup(
-                    "Eventgroup {} not avaialble in sport {}".format(
+                    "Eventgroup {} not available in sport {}".format(
                         eventgroup, sport))
 
     def test_operation_equal(self, eventgroup, **kwargs):
