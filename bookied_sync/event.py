@@ -88,6 +88,9 @@ class LookupEvent(Lookup, dict):
         ):
             raise ValueError(
                 "'start_time' must be instance of datetime.datetime()")
+        else:
+            # remove offset
+            self["start_time"] = self["start_time"].replace(tzinfo=None)
 
         if not isinstance(self["season"], dict):
             raise ValueError(
@@ -331,3 +334,17 @@ class LookupEvent(Lookup, dict):
         from .eventstatus import LookupEventStatus
         status = LookupEventStatus(self, status, scores=scores)
         return status.update()
+
+    @property
+    def can_open(self):
+        """ Only update if after leadtime
+        """
+        from datetime import datetime, timedelta
+        start_time = self["start_time"]
+        evg = self.eventgroup
+        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
+        finish_date = datetime.strptime(evg.get("finish_date"), "%Y/%m/%d")
+        return (
+            start_time > start_date - timedelta(days=evg["leadtime_Max"]) and
+            start_time < finish_date
+        )

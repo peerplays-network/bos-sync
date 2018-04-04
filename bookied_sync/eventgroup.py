@@ -156,11 +156,15 @@ class LookupEventGroup(Lookup, dict):
     def is_open(self):
         """ Only update if after leadtime
         """
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
-        start_date = datetime.strptime(self.get("start_date"), "%Y/%m/%d")
-        finish_date = datetime.strptime(self.get("finish_date"), "%Y/%m/%d")
-        return (
-            now > start_date + timedelta(days=self["leadtime_Max"]) and
-            now < finish_date
-        )
+        # Today, we only distinguish events through the dates,
+        # not prevent them from being created
+        return True
+
+        # from datetime import datetime, timedelta
+        # now = datetime.utcnow()
+        # start_date = datetime.strptime(self.get("start_date"), "%Y/%m/%d")
+        # finish_date = datetime.strptime(self.get("finish_date"), "%Y/%m/%d")
+        # return (
+        #     now > start_date and
+        #     now < finish_date
+        # )
