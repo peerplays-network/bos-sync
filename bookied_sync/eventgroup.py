@@ -151,3 +151,16 @@ class LookupEventGroup(Lookup, dict):
                 v
             ] for k, v in names.items()
         ]
+
+    @property
+    def is_open(self):
+        """ Only update if after leadtime
+        """
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        start_date = datetime.strptime(self.get("start_date"), "%Y/%m/%d")
+        finish_date = datetime.strptime(self.get("finish_date"), "%Y/%m/%d")
+        return (
+            now > start_date + timedelta(days=self["leadtime_Max"]) and
+            now < finish_date
+        )
