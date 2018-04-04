@@ -126,11 +126,12 @@ class LookupBettingMarketGroup(Lookup, dict):
             in a proposal and refer to event_id 0.0.x
         """
         if event_id and not test_event and event_id[0] == "0" and "proposal" in kwargs:
-            full_proposal = kwargs.get("proposal")
-            operation_id = int(event_id.split(".")[2])
-            parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
-            if not self.parent.test_operation_equal(parent_op[1]):
-                return False
+            full_proposal = kwargs.get("proposal", {})
+            if full_proposal:
+                operation_id = int(event_id.split(".")[2])
+                parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
+                if not self.parent.test_operation_equal(parent_op[1]):
+                    return False
 
         if (
             all([a in chainsdescr for a in lookupdescr]) and
