@@ -8,7 +8,7 @@ from peerplays.utils import formatTime, parse_time
 # from . import log
 
 
-def subsitution(teams, scheme):
+def substitution(teams, scheme):
     class Teams:
         home = " ".join([
             x.capitalize() for x in teams[0].split(" ")])
@@ -127,7 +127,7 @@ class LookupEvent(Lookup, dict):
         eventgroup = LookupEventGroup(sport, eventgroup_identifier)
         events = Events(eventgroup.id)  # This is a pypeerplays class!
         # Format teams into proper names according to event scheme
-        names = subsitution(teams, eventgroup["eventscheme"]["name"])
+        names = substitution(teams, eventgroup["eventscheme"]["name"])
         names = [[k, v] for k, v in names.items()]
         for event in events:
             if (
@@ -301,7 +301,7 @@ class LookupEvent(Lookup, dict):
         """
         teams = self["teams"]
         scheme = self.eventscheme.get("name", {})
-        return subsitution(teams, scheme)
+        return substitution(teams, scheme)
 
     @property
     def season(self):

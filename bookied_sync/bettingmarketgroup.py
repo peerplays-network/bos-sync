@@ -9,6 +9,21 @@ from peerplays.bettingmarketgroup import (
 from . import log
 
 
+def substitution(teams, scheme):
+    class Teams:
+        home = " ".join([
+            x.capitalize() for x in teams[0].split(" ")])
+        away = " ".join([
+            x.capitalize() for x in teams[1].split(" ")])
+
+    ret = dict()
+    for lang, name in scheme.items():
+        ret[lang] = name.format(
+            teams=Teams
+        )
+    return ret
+
+
 class LookupBettingMarketGroup(Lookup, dict):
     """ Lookup Class for betting market groups
 
@@ -195,25 +210,26 @@ class LookupBettingMarketGroup(Lookup, dict):
 
         from .bettingmarket import LookupBettingMarket
 
-        # Allow to overwrite the variables that might be in the betting market
-        # definition (such as home team and away team names)
-        class Teams:
-            home = " ".join([
-                x.capitalize() for x in self.event["teams"][0].split(" ")])
-            away = " ".join([
-                x.capitalize() for x in self.event["teams"][1].split(" ")])
-
+        bm_counter = 0
         for market in self["bettingmarkets"]:
-            description = dict()
-
+            bm_counter += 1
             # Overwrite the description with with proper replacement of variables
-            for k, v in market["description"].items():
-                description[k] = v.format(
-                    teams=Teams
-                )
+            description = substitution(self.event["teams"], market["description"])
+
+            # Yield one Lookup per betting market
             yield LookupBettingMarket(
                 description=description,
                 bmg=self
+            )
+
+        if bm_counter != int(self["number_betting_markets"]):
+            log.critical(
+                "We have created a different number of betting markets in "
+                "Event: {} / BMG: {} / {}!={}".format(
+                    self.parent["name"]["en"],
+                    self["description"]["en"],
+                    bm_counter, self["number_betting_markets"]
+                )
             )
 
     @property
