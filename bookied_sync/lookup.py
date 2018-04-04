@@ -5,6 +5,7 @@ from peerplays.instance import shared_peerplays_instance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
+from peerplays.witness import Witnesses
 from .exceptions import ObjectNotFoundError
 from bookiesports import BookieSports
 from . import log
@@ -232,8 +233,16 @@ class Lookup(dict):
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)
+        witnesses = Witnesses()
         props = list()
         for proposal in pending_proposals:
+            # Do not inspect proposals that have not been proposed by a witness
+            if proposal.proposer not in witnesses:
+                log.info(
+                    "Skipping proposal {} as it has been proposed by a non witness '{}'".format(
+                        proposal["id"],
+                        Account(proposal.proposer)["name"]))
+                continue
             ret = []
             if not proposal["id"] in Lookup.approval_map:
                 Lookup.approval_map[proposal["id"]] = {}
