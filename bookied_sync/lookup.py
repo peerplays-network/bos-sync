@@ -233,7 +233,7 @@ class Lookup(dict):
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)
-        witnesses = Witnesses()
+        witnesses = Witnesses(only_active=True)
         props = list()
         for proposal in pending_proposals:
             # Do not inspect proposals that have not been proposed by a witness
