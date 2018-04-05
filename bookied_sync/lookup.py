@@ -293,11 +293,11 @@ class Lookup(dict):
                     log.info("Approving proposal {} by {}".format(
                         p, account["name"]))
                     approved_read_for_delete.append(p)
-                    self.peerplays.approveproposal(
+                    log.info(self.peerplays.approveproposal(
                         p,
                         account=self.approving_account,
                         append_to=Lookup.direct_buffer
-                    )
+                    ))
                 else:
                     log.info(
                         "Proposal {} has already been approved by {}".format(
