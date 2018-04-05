@@ -182,7 +182,7 @@ class Lookup(dict):
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id()
             if id:
-                log.warning((
+                log.info((
                     "Object \"{}\" carries id {} on the blockchain. "
                     "Please update your lookup"
                 ).format(self.identifier, id))
