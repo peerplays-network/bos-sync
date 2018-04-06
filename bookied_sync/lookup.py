@@ -136,7 +136,9 @@ class Lookup(dict):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
-            proposer=self.proposing_account)
+            proposer=self.proposing_account,
+            proposal_expiration=60 * 60  # 1 hour
+        )
 
     def clear_direct_buffer(self):
         Lookup.direct_buffer = self.peerplays.new_tx()
@@ -299,6 +301,8 @@ class Lookup(dict):
             log.info("Cannot approve pending-for-broadcast proposals")
             return
         Lookup.approval_map[pid][oid] = True
+        log.info("Approval Map: {}".format(str(Lookup.approval_map)))
+
         approved_read_for_delete = []
         for p in Lookup.approval_map:
             if all(Lookup.approval_map[p].values()):
@@ -318,8 +322,6 @@ class Lookup(dict):
                         "Proposal {} has already been approved by {}".format(
                             p, account["name"])
                     )
-
-        log.info("Approval Map: {}".format(str(Lookup.approval_map)))
 
         # In order not to approve the same proposal again and again, we remove
         # it from the map
