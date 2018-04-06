@@ -195,7 +195,18 @@ class Lookup(dict):
                         "Object \"{}\" has pending update proposal. Approving ..."
                     ).format(self.identifier))
                     have_approved = True
-                    self.approve(*has_pending_new)
+                    self.approve(**has_pending_new)
+
+                    # We now test if we have approved a proposal that only had
+                    # one operation, if that is the case, we can stop because
+                    # no other proposed create operation should be approved
+                    # other then the first in the line
+                    proposal = has_pending_new.get("proposal")
+                    from pprint import pprint
+                    pprint(dict(proposal))
+                    if len(list(proposal.proposed_operations)) < 2:
+                        log.info("Skipping here, as we only approve one create operation")
+                        break
 
                 if not have_approved:
                     # If not found, nor approved, then propose
@@ -222,7 +233,11 @@ class Lookup(dict):
                         str(has_pending_update)
                     ))
                 have_approved = True
-                self.approve(*has_pending_update)
+                self.approve(**has_pending_update)
+
+                # In contrast to has_pending_new, we here do not break the loop
+                # as we allow to approve updates multiple times if we agree. No
+                # damange can be done (in contrast to has_pending_new.
 
             if not have_approved:
                 log.info("Object has no pending update, yet: {}: {}".format(
@@ -261,7 +276,7 @@ class Lookup(dict):
         ):
             yield op.json(), "0.0.0", "0.0.%d" % oid
 
-    def approve(self, pid, oid):
+    def approve(self, pid, oid, **kwargs):
         """ Approve a proposal
 
             This call basically flags a single update operation of a proposal
@@ -322,8 +337,9 @@ class Lookup(dict):
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
+                    log.debug("Testing pending proposal {}".format(proposal["id"]))
                     if self.test_operation_equal(op[1], proposal=proposal):
-                        yield pid, oid
+                        yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_new(self):
         """ This call tests if an operation is buffered for proposal
@@ -348,7 +364,7 @@ class Lookup(dict):
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_update:
                     if self.test_operation_equal(op[1], proposal=proposal):
-                        yield pid, oid
+                        yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_update(self):
         """ Test if there is an update buffered locally to properly match

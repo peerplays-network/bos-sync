@@ -5,7 +5,7 @@ from .eventgroup import LookupEventGroup
 from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
 from peerplays.utils import formatTime, parse_time
-# from . import log
+from . import log
 
 
 def substitution(teams, scheme):
@@ -192,6 +192,7 @@ class LookupEvent(Lookup, dict):
             raise ValueError
 
         test_status = self.get("status") and event.get("status")
+        test_season = bool(lookupseason) and bool(chainseason)
 
         if event_group_id:
             parts = event_group_id.split(".")
@@ -202,7 +203,7 @@ class LookupEvent(Lookup, dict):
 
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames]) and
-                (lookupseason and  # only test if a season is provided
+                (not test_season or  # only test if a season is provided
                     all([b in lookupseason for b in chainseason]) and
                     all([b in chainseason for b in lookupseason])) and
                 (not event_group_id or self.parent_id == event_group_id) and
