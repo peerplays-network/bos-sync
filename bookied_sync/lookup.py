@@ -406,7 +406,7 @@ class Lookup(dict):
         # parent object to go through
         found = list(self.has_pending_new())
         if found:
-            return found[0][0]  # first element of first return tuple
+            return found[0]["pid"]  # pid of first return element
 
         # Try find the id in the locally buffered proposals
         found = self.has_buffered_new()  # not a generator
