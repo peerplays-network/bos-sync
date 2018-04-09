@@ -147,9 +147,8 @@ class Lookup(dict):
         """ Since we are using multiple txbuffers, we need to do multiple
             broadcasts
         """
-        from pprint import pprint
-        pprint(Lookup.direct_buffer.broadcast())
-        pprint(Lookup.proposal_buffer.broadcast())
+        log.debug(Lookup.direct_buffer.broadcast())
+        log.debug(Lookup.proposal_buffer.broadcast())
 
     # List calls
     def list_sports(self):
@@ -204,8 +203,6 @@ class Lookup(dict):
                     # no other proposed create operation should be approved
                     # other then the first in the line
                     proposal = has_pending_new.get("proposal")
-                    from pprint import pprint
-                    pprint(dict(proposal))
                     if len(list(proposal.proposed_operations)) < 2:
                         log.info("Skipping here, as we only approve one create operation")
                         break
