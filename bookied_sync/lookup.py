@@ -193,8 +193,8 @@ class Lookup(dict):
                 have_approved = False
                 for has_pending_new in self.has_pending_new():
                     log.info((
-                        "Object \"{}\" has pending update proposal. Approving ..."
-                    ).format(self.identifier))
+                        "Object \"{}\" has pending update proposal. Approving {}"
+                    ).format(self.identifier, has_pending_new))
                     have_approved = True
                     self.approve(**has_pending_new)
 
@@ -298,7 +298,14 @@ class Lookup(dict):
             log.info("Cannot approve pending-for-broadcast proposals")
             return
         Lookup.approval_map[pid][oid] = True
-        log.info("Approval Map: {}".format(str(Lookup.approval_map)))
+
+        def pretty_proposal_map():
+            ret = dict()
+            for k, v in Lookup.approval_map.items():
+                ret[k] = "{:.1f}".format(sum(v.values()) / len(v) * 100)
+            return ret
+
+        log.info("Approval Map: {}".format(pretty_proposal_map()))
 
         approved_read_for_delete = []
         for p in Lookup.approval_map:

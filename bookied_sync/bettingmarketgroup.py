@@ -111,11 +111,11 @@ class LookupBettingMarketGroup(Lookup, dict):
 
         # Test if Rules and Events exist
         # only if the id starts with 1.
-        test_rule = rules_id and rules_id[0] == 1
+        test_rule = rules_id and rules_id[0] == "1"
         if test_rule:
             Rule(rules_id)
 
-        test_event = event_id and event_id[0] == 1
+        test_event = event_id and event_id[0] == "1"
         if test_event:
             Event(event_id)
 

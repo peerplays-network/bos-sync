@@ -75,7 +75,7 @@ class LookupBettingMarket(Lookup, dict):
         chainsdescr = bmg[prefix + "description"]
         group_id = bmg[prefix + "group_id"]
 
-        test_group = group_id and group_id[0] == 1
+        test_group = group_id and group_id[0] == "1"
         if test_group:
             BettingMarketGroup(group_id)
 
