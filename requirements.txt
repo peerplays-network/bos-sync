@@ -1,0 +1,6 @@
+peerplays
+bookiesports
+
+pyyaml
+colorlog
+dateutils

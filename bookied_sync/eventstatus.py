@@ -62,7 +62,7 @@ class LookupEventStatus(Lookup, dict):
         self.identifier = "{} -> {}".format(
             event["name"]["en"], status)
 
-    def test_operation_equal(self, op):
+    def test_operation_equal(self, op, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

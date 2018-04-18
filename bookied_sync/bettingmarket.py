@@ -1,3 +1,4 @@
+from . import log
 from .lookup import Lookup
 from .rule import LookupRules
 from peerplays.bettingmarket import (
@@ -52,7 +53,7 @@ class LookupBettingMarket(Lookup, dict):
         """
         return self.parent
 
-    def test_operation_equal(self, bmg):
+    def test_operation_equal(self, bmg, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
@@ -74,9 +75,21 @@ class LookupBettingMarket(Lookup, dict):
         chainsdescr = bmg[prefix + "description"]
         group_id = bmg[prefix + "group_id"]
 
-        test_group = group_id[0] == 1
+        test_group = group_id and group_id[0] == "1"
         if test_group:
             BettingMarketGroup(group_id)
+
+        """ We need to properly deal with the fact that betting markets
+            cannot be distinguished alone from the payload if they are bundled
+            in a proposal and refer to betting_market_group_id 0.0.x
+        """
+        if group_id and not test_group and group_id[0] == "0" and "proposal" in kwargs:
+            full_proposal = kwargs.get("proposal")
+            if full_proposal:
+                operation_id = int(group_id.split(".")[2])
+                parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
+                if not self.parent.test_operation_equal(parent_op[1]):
+                    return False
 
         if (all([a in chainsdescr for a in lookupdescr]) and
                 all([b in lookupdescr for b in chainsdescr]) and

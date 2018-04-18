@@ -1,14 +1,17 @@
 import os
-from peerplays.instance import shared_peerplays_instance
+import logging
+
+from peerplays.instance import BlockchainInstance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
-from . import log, UPDATE_PENDING_NEW, UPDATE_PROPOSING_NEW
+from peerplays.witness import Witnesses
 from .exceptions import ObjectNotFoundError
 from bookiesports import BookieSports
+from . import log
 
 
-class Lookup(dict):
+class Lookup(dict, BlockchainInstance):
     """ This Lookup class is used as the main class which is inherited by all
         the other classes used in this module.
 
@@ -53,21 +56,29 @@ class Lookup(dict):
     ):
         """ Let's load all the data from the folder and its subfolders
         """
-        self.peerplays = peerplays_instance or shared_peerplays_instance()
+        BlockchainInstance.__init__(self, *args, **kwargs)
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
-        if not self.proposing_account and not proposing_account:
-            if "default_account" in config:
-                proposing_account = config["default_account"]
-        else:
+        if not self.proposing_account and proposing_account:
             self.proposing_account = proposing_account
-
-        if not self.approving_account and not approving_account:
-            if "default_account" in config:
-                approving_account = config["default_account"]
+        elif self.proposing_account:
+            pass
+        elif "default_account" in config:
+            proposing_account = config["default_account"]
         else:
+            log.error("No proposing account known")
+            raise Exception("No proposing account known!")
+
+        if not self.approving_account and approving_account:
             self.approving_account = approving_account
+        elif self.approving_account:
+            pass
+        elif "default_account" in config:
+            approving_account = config["default_account"]
+        else:
+            log.error("No approving account known")
+            raise Exception("No approving account known!")
 
         # We define two transaction buffers
         if not Lookup.direct_buffer:
@@ -125,7 +136,9 @@ class Lookup(dict):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
-            proposer=self.proposing_account)
+            proposer=self.proposing_account,
+            proposal_expiration=60 * 60  # 1 hour
+        )
 
     def clear_direct_buffer(self):
         Lookup.direct_buffer = self.peerplays.new_tx()
@@ -134,9 +147,8 @@ class Lookup(dict):
         """ Since we are using multiple txbuffers, we need to do multiple
             broadcasts
         """
-        from pprint import pprint
-        pprint(Lookup.direct_buffer.broadcast())
-        pprint(Lookup.proposal_buffer.broadcast())
+        log.debug(Lookup.direct_buffer.broadcast())
+        log.debug(Lookup.proposal_buffer.broadcast())
 
     # List calls
     def list_sports(self):
@@ -151,9 +163,8 @@ class Lookup(dict):
 
     # Update call
     def update(self):
-        """ This call makes sure that the data in the  lookup matches
-            the data on the blockchain for the object we are currenty looking
-            at.
+        """ This call makes sure that the data in the  lookup matches the data
+            on the blockchain for the object we are currenty looking at.
 
             It works like this:
 
@@ -171,40 +182,63 @@ class Lookup(dict):
 
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id()
-            has_pending_new = self.has_pending_new()
             if id:
-                log.error((
+                log.info((
                     "Object \"{}\" carries id {} on the blockchain. "
                     "Please update your lookup"
                 ).format(self.identifier, id))
                 self["id"] = id
-            elif has_pending_new:
-                log.warn((
-                    "Object \"{}\" has pending update proposal. Approving ..."
-                ).format(self.identifier))
-                self.approve(*has_pending_new)
-                return UPDATE_PENDING_NEW
-            else:
-                log.warn((
-                    "Object \"{}\" does not exist on chain. Proposing ..."
-                ).format(self.identifier))
-                self.propose_new()
-                return UPDATE_PROPOSING_NEW
 
+            else:
+                have_approved = False
+                for has_pending_new in self.has_pending_new():
+                    log.info((
+                        "Object \"{}\" has pending update proposal. Approving {}"
+                    ).format(self.identifier, has_pending_new))
+                    have_approved = True
+                    self.approve(**has_pending_new)
+
+                    # We now test if we have approved a proposal that only had
+                    # one operation, if that is the case, we can stop because
+                    # no other proposed create operation should be approved
+                    # other then the first in the line
+                    proposal = has_pending_new.get("proposal")
+                    if len(list(proposal.proposed_operations)) < 2:
+                        log.info("Skipping here, as we only approve one create operation")
+                        break
+
+                if not have_approved:
+                    # If not found, nor approved, then propose
+                    log.info((
+                        "Object \"{}\" does not exist on chain. Proposing ..."
+                    ).format(self.identifier))
+                    self.propose_new()
+
+                # We do not need to go over for proposing an update
+                return
+
+        # Now test if the object is fully synced
         if not self.is_synced():
-            log.warn("Object not fully synced: {}: {}".format(
+            log.info("Object not fully synced: {}: {}".format(
                 self.__class__.__name__,
                 str(self.get("name", ""))
             ))
-            has_pending_update = self.has_pending_update()
-            if has_pending_update:
-                log.info("Object has pending update: {}: {} in {}".format(
-                    self.__class__.__name__,
-                    str(self.get("name", "")),
-                    str(has_pending_update)
-                ))
-                self.approve(*has_pending_update)
-            else:
+            have_approved = False
+            for has_pending_update in self.has_pending_update():
+                log.info(
+                    "Object has pending update: {}: {} in {}".format(
+                        self.__class__.__name__,
+                        str(self.get("name", "")),
+                        str(has_pending_update)
+                    ))
+                have_approved = True
+                self.approve(**has_pending_update)
+
+                # In contrast to has_pending_new, we here do not break the loop
+                # as we allow to approve updates multiple times if we agree. No
+                # damange can be done (in contrast to has_pending_new.
+
+            if not have_approved:
                 log.info("Object has no pending update, yet: {}: {}".format(
                     self.__class__.__name__,
                     str(self.get("name", ""))
@@ -213,15 +247,25 @@ class Lookup(dict):
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)
-        ret = []
+        witnesses = Witnesses(only_active=True)
+        props = list()
         for proposal in pending_proposals:
+            # Do not inspect proposals that have not been proposed by a witness
+            if proposal.proposer not in witnesses:
+                log.info(
+                    "Skipping proposal {} as it has been proposed by a non witness '{}'".format(
+                        proposal["id"],
+                        Account(proposal.proposer)["name"]))
+                continue
+            ret = []
             if not proposal["id"] in Lookup.approval_map:
                 Lookup.approval_map[proposal["id"]] = {}
             for oid, operations in enumerate(proposal.proposed_operations):
                 if oid not in Lookup.approval_map[proposal["id"]]:
                     Lookup.approval_map[proposal["id"]][oid] = False
                 ret.append((operations, proposal["id"], oid))
-        return ret
+            props.append(dict(proposal=proposal, data=ret))
+        return props
 
     def get_buffered_operations(self):
         # Obtain the proposals that we have in our buffer
@@ -231,7 +275,7 @@ class Lookup(dict):
         ):
             yield op.json(), "0.0.0", "0.0.%d" % oid
 
-    def approve(self, pid, oid):
+    def approve(self, pid, oid, **kwargs):
         """ Approve a proposal
 
             This call basically flags a single update operation of a proposal
@@ -254,6 +298,15 @@ class Lookup(dict):
             log.info("Cannot approve pending-for-broadcast proposals")
             return
         Lookup.approval_map[pid][oid] = True
+
+        def pretty_proposal_map():
+            ret = dict()
+            for k, v in Lookup.approval_map.items():
+                ret[k] = "{:.1f}".format(sum(v.values()) / len(v) * 100)
+            return ret
+
+        log.info("Approval Map: {}".format(pretty_proposal_map()))
+
         approved_read_for_delete = []
         for p in Lookup.approval_map:
             if all(Lookup.approval_map[p].values()):
@@ -263,18 +316,16 @@ class Lookup(dict):
                     log.info("Approving proposal {} by {}".format(
                         p, account["name"]))
                     approved_read_for_delete.append(p)
-                    self.peerplays.approveproposal(
+                    log.info(self.peerplays.approveproposal(
                         p,
                         account=self.approving_account,
                         append_to=Lookup.direct_buffer
-                    )
+                    ))
                 else:
                     log.info(
                         "Proposal {} has already been approved by {}".format(
                             p, account["name"])
                     )
-
-        log.info("Approval Map: {}".format(str(Lookup.approval_map)))
 
         # In order not to approve the same proposal again and again, we remove
         # it from the map
@@ -288,10 +339,13 @@ class Lookup(dict):
             It only returns true if the exact content is proposed
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for op, pid, oid in self.get_pending_operations():
-            if getOperationNameForId(op[0]) == self.operation_create:
-                if self.test_operation_equal(op[1]):
-                    return pid, oid
+        for proposalObject in self.get_pending_operations():
+            proposal = proposalObject["proposal"]
+            for op, pid, oid in proposalObject["data"]:
+                if getOperationNameForId(op[0]) == self.operation_create:
+                    log.debug("Testing pending proposal {}".format(proposal["id"]))
+                    if self.test_operation_equal(op[1], proposal=proposal):
+                        yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_new(self):
         """ This call tests if an operation is buffered for proposal
@@ -311,10 +365,12 @@ class Lookup(dict):
             It only returns true if the exact content is proposed
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for op, pid, oid in self.get_pending_operations():
-            if getOperationNameForId(op[0]) == self.operation_update:
-                if self.test_operation_equal(op[1]):
-                    return pid, oid
+        for proposalObject in self.get_pending_operations():
+            proposal = proposalObject["proposal"]
+            for op, pid, oid in proposalObject["data"]:
+                if getOperationNameForId(op[0]) == self.operation_update:
+                    if self.test_operation_equal(op[1], proposal=proposal):
+                        yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_update(self):
         """ Test if there is an update buffered locally to properly match
@@ -350,12 +406,14 @@ class Lookup(dict):
             return found
 
         # Try find the id in the pending on-chain proposals
-        found = self.has_pending_new()
+        # we expect the first proposalthat proposes the
+        # parent object to go through
+        found = list(self.has_pending_new())
         if found:
-            return found[0]
+            return found[0]["pid"]  # pid of first return element
 
         # Try find the id in the locally buffered proposals
-        found = self.has_buffered_new()
+        found = self.has_buffered_new()  # not a generator
         if found:
             return found[1]
 
@@ -373,7 +431,7 @@ class Lookup(dict):
             return self.parent.id
 
     # Prototypes #############################################################
-    def test_operation_equal(self, sport):
+    def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

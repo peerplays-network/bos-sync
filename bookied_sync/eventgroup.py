@@ -55,10 +55,10 @@ class LookupEventGroup(Lookup, dict):
 
             if not found:
                 raise ObjectNotFoundInLookup(
-                    "Eventgroup {} not avaialble in sport {}".format(
+                    "Eventgroup {} not available in sport {}".format(
                         eventgroup, sport))
 
-    def test_operation_equal(self, eventgroup):
+    def test_operation_equal(self, eventgroup, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
@@ -151,3 +151,20 @@ class LookupEventGroup(Lookup, dict):
                 v
             ] for k, v in names.items()
         ]
+
+    @property
+    def is_open(self):
+        """ Only update if after leadtime
+        """
+        # Today, we only distinguish events through the dates,
+        # not prevent them from being created
+        return True
+
+        # from datetime import datetime, timedelta
+        # now = datetime.utcnow()
+        # start_date = datetime.strptime(self.get("start_date"), "%Y/%m/%d")
+        # finish_date = datetime.strptime(self.get("finish_date"), "%Y/%m/%d")
+        # return (
+        #     now > start_date and
+        #     now < finish_date
+        # )

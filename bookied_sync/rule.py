@@ -1,5 +1,6 @@
 from .lookup import Lookup
 from peerplays.rule import Rules, Rule
+from . import log
 
 
 class LookupRules(Lookup, dict):
@@ -27,12 +28,13 @@ class LookupRules(Lookup, dict):
             self.data["sports"][sport]["rules"][rules]
         )
 
-    def test_operation_equal(self, operation):
+    def test_operation_equal(self, operation, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
         lookupnames = self.descriptions
         chainsnames = [[]]
+        # description tag also contains the grading
         if "name" in operation:
             chainsnames = operation["description"]
         elif "new_name" in operation:
@@ -105,9 +107,16 @@ class LookupRules(Lookup, dict):
     def descriptions(self):
         """ Properly format descriptions for internal use
         """
+
+        # For sake of transparency, we store the grading on the blockchain too
+        #
+        import json
+        grading = json.dumps(self["grading"], sort_keys=True)
+        data = self["description"]
+        data.update(dict(grading=grading))
         return [
             [
-                k,
-                v
-            ] for k, v in self["description"].items()
+                k.strip(),
+                v.strip()
+            ] for k, v in data.items()
         ]

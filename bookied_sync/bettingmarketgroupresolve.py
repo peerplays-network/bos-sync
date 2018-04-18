@@ -3,6 +3,7 @@ from .rule import LookupRules
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup
 )
+from peerplays.rule import Rule
 
 
 class LookupBettingMarketGroupResolve(Lookup, dict):
@@ -60,6 +61,11 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         return LookupRules(self.sport["identifier"], self["rules"])
 
     @property
+    def grading(self):
+        rule = Rule(self.rules.id, peerplays_instance=self.peerplays)
+        return rule.grading
+
+    @property
     def resolutions(self):
         """ This property constructs the resultions array to be used in the
             transactions. It takes the following form
@@ -73,14 +79,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                 ]
 
         """
-        grading = self.rules.get("grading")
-        assert grading, "Rules {} have no grading!?".format(
-            self.rules["identifier"])
-        assert "metric" in grading
-        assert "resolutions" in grading
-
         # Define variables we want to use when grading
-
         class Result:
             hometeam = (self["result"][0])
             awayteam = float(self["result"][1])
@@ -116,10 +115,10 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                     equation, equation.format(result=Result)))
             return metric
 
-        metric = return_metric(grading.get("metric", ""))
+        metric = return_metric(self.grading.get("metric", ""))
         bettingmarkets = self.markets
         ret = []
-        for market in grading.get("resolutions", []):
+        for market in self.grading.get("resolutions", []):
             bettingmarket = next(bettingmarkets)
             resolved = {
                 key: evaluate_metric(option, metric)
@@ -139,7 +138,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
 
         return ret
 
-    def test_operation_equal(self, resolve):
+    def test_operation_equal(self, resolve, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """

@@ -5,10 +5,10 @@ from .eventgroup import LookupEventGroup
 from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
 from peerplays.utils import formatTime, parse_time
-# from . import log
+from . import log
 
 
-def subsitution(teams, scheme):
+def substitution(teams, scheme):
     class Teams:
         home = " ".join([
             x.capitalize() for x in teams[0].split(" ")])
@@ -88,6 +88,9 @@ class LookupEvent(Lookup, dict):
         ):
             raise ValueError(
                 "'start_time' must be instance of datetime.datetime()")
+        else:
+            # remove offset
+            self["start_time"] = self["start_time"].replace(tzinfo=None)
 
         if not isinstance(self["season"], dict):
             raise ValueError(
@@ -127,7 +130,7 @@ class LookupEvent(Lookup, dict):
         eventgroup = LookupEventGroup(sport, eventgroup_identifier)
         events = Events(eventgroup.id)  # This is a pypeerplays class!
         # Format teams into proper names according to event scheme
-        names = subsitution(teams, eventgroup["eventscheme"]["name"])
+        names = substitution(teams, eventgroup["eventscheme"]["name"])
         names = [[k, v] for k, v in names.items()]
         for event in events:
             if (
@@ -167,7 +170,7 @@ class LookupEvent(Lookup, dict):
             sport["identifier"],
             self["eventgroup_identifier"]))
 
-    def test_operation_equal(self, event):
+    def test_operation_equal(self, event, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
@@ -179,25 +182,32 @@ class LookupEvent(Lookup, dict):
             chainsnames = event["name"]
             event_group_id = event["event_group_id"]
             chainseason = event["season"]
+            status = event.get("status")
         elif "new_name" in event:
-            chainsnames = event["new_name"]
-            event_group_id = event["new_sport_id"]
-            chainseason = event["new_season"]
+            chainsnames = event.get("new_name")
+            event_group_id = event.get("new_sport_id")
+            chainseason = event.get("new_season")
+            status = event.get("new_status")
         else:
             raise ValueError
 
-        parts = event_group_id.split(".")
-        assert len(parts) == 3,\
-            "{} is a strange sport object id".format(event_group_id)
-        if int(parts[0]) == 0:
-            event_group_id = ""
+        test_status = self.get("status") and event.get("status")
+        test_season = bool(lookupseason) and bool(chainseason)
+
+        if event_group_id:
+            parts = event_group_id.split(".")
+            assert len(parts) == 3,\
+                "{} is a strange sport object id".format(event_group_id)
+            if int(parts[0]) == 0:
+                event_group_id = ""
 
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames]) and
-                (lookupseason and  # only test if a season is provided
+                (not test_season or  # only test if a season is provided
                     all([b in lookupseason for b in chainseason]) and
                     all([b in chainseason for b in lookupseason])) and
-                (not event_group_id or self.parent_id == event_group_id)):
+                (not event_group_id or self.parent_id == event_group_id) and
+                (not test_status or status == self.get("status"))):
             return True
 
     def find_id(self):
@@ -295,7 +305,7 @@ class LookupEvent(Lookup, dict):
         """
         teams = self["teams"]
         scheme = self.eventscheme.get("name", {})
-        return subsitution(teams, scheme)
+        return substitution(teams, scheme)
 
     @property
     def season(self):
@@ -325,3 +335,17 @@ class LookupEvent(Lookup, dict):
         from .eventstatus import LookupEventStatus
         status = LookupEventStatus(self, status, scores=scores)
         return status.update()
+
+    @property
+    def can_open(self):
+        """ Only update if after leadtime
+        """
+        from datetime import datetime, timedelta
+        start_time = self["start_time"]
+        evg = self.eventgroup
+        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
+        finish_date = datetime.strptime(evg.get("finish_date"), "%Y/%m/%d")
+        return (
+            start_time > start_date - timedelta(days=evg["leadtime_Max"]) and
+            start_time < finish_date
+        )

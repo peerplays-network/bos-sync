@@ -6,6 +6,22 @@ from peerplays.rule import Rule
 from peerplays.asset import Asset
 from peerplays.bettingmarketgroup import (
     BettingMarketGroups, BettingMarketGroup)
+from . import log
+
+
+def substitution(teams, scheme):
+    class Teams:
+        home = " ".join([
+            x.capitalize() for x in teams[0].split(" ")])
+        away = " ".join([
+            x.capitalize() for x in teams[1].split(" ")])
+
+    ret = dict()
+    for lang, name in scheme.items():
+        ret[lang] = name.format(
+            teams=Teams
+        )
+    return ret
 
 
 class LookupBettingMarketGroup(Lookup, dict):
@@ -68,7 +84,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         assert self["rules"] in self.sport["rules"]
         return LookupRules(self.sport["identifier"], self["rules"])
 
-    def test_operation_equal(self, bmg):
+    def test_operation_equal(self, bmg, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
@@ -87,27 +103,42 @@ class LookupBettingMarketGroup(Lookup, dict):
         lookupdescr = self.description
         chainsdescr = [[]]
         prefix = "new_" if is_update(bmg) else ""
-        chainsdescr = bmg[prefix + "description"]
-        rules_id = bmg[prefix + "rules_id"]
-        event_id = bmg[prefix + "event_id"]
+        chainsdescr = bmg.get(prefix + "description")
+        rules_id = bmg.get(prefix + "rules_id")
+        event_id = bmg.get(prefix + "event_id")
         # Fixme: sync object to also include the proper status
-        #status = bmg.get("status")
+        status = bmg.get("status")
 
         # Test if Rules and Events exist
         # only if the id starts with 1.
-        test_rule = rules_id[0] == 1
+        test_rule = rules_id and rules_id[0] == "1"
         if test_rule:
             Rule(rules_id)
 
-        test_event = event_id[0] == 1
+        test_event = event_id and event_id[0] == "1"
         if test_event:
             Event(event_id)
+
+        test_status = bool(self.get("status"))
+
+        """ We need to properly deal with the fact that betting market groups
+            cannot be distinguished alone from the payload if they are bundled
+            in a proposal and refer to event_id 0.0.x
+        """
+        if event_id and not test_event and event_id[0] == "0" and "proposal" in kwargs:
+            full_proposal = kwargs.get("proposal", {})
+            if full_proposal:
+                operation_id = int(event_id.split(".")[2])
+                parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
+                if not self.parent.test_operation_equal(parent_op[1]):
+                    return False
 
         if (
             all([a in chainsdescr for a in lookupdescr]) and
             all([b in lookupdescr for b in chainsdescr]) and
             (not test_event or event_id == self.event.id) and
-            (not test_rule or rules_id == self.rules.id)
+            (not test_rule or rules_id == self.rules.id) and
+            (not test_status or status == self.get(status))
         ):
             return True
         return False
@@ -180,25 +211,26 @@ class LookupBettingMarketGroup(Lookup, dict):
 
         from .bettingmarket import LookupBettingMarket
 
-        # Allow to overwrite the variables that might be in the betting market
-        # definition (such as home team and away team names)
-        class Teams:
-            home = " ".join([
-                x.capitalize() for x in self.event["teams"][0].split(" ")])
-            away = " ".join([
-                x.capitalize() for x in self.event["teams"][1].split(" ")])
-
+        bm_counter = 0
         for market in self["bettingmarkets"]:
-            description = dict()
-
+            bm_counter += 1
             # Overwrite the description with with proper replacement of variables
-            for k, v in market["description"].items():
-                description[k] = v.format(
-                    teams=Teams
-                )
+            description = substitution(self.event["teams"], market["description"])
+
+            # Yield one Lookup per betting market
             yield LookupBettingMarket(
                 description=description,
                 bmg=self
+            )
+
+        if bm_counter != int(self["number_betting_markets"]):
+            log.critical(
+                "We have created a different number of betting markets in "
+                "Event: {} / BMG: {} / {}!={}".format(
+                    self.parent["name"]["en"],
+                    self["description"]["en"],
+                    bm_counter, self["number_betting_markets"]
+                )
             )
 
     @property
