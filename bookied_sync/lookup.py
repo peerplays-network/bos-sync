@@ -1,7 +1,7 @@
 import os
 import logging
 
-from peerplays.instance import shared_peerplays_instance
+from peerplays.instance import BlockchainInstance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
@@ -11,7 +11,7 @@ from bookiesports import BookieSports
 from . import log
 
 
-class Lookup(dict):
+class Lookup(dict, BlockchainInstance):
     """ This Lookup class is used as the main class which is inherited by all
         the other classes used in this module.
 
@@ -56,7 +56,7 @@ class Lookup(dict):
     ):
         """ Let's load all the data from the folder and its subfolders
         """
-        self.peerplays = peerplays_instance or shared_peerplays_instance()
+        BlockchainInstance.__init__(self, *args, **kwargs)
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
