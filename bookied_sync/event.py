@@ -349,3 +349,13 @@ class LookupEvent(Lookup, dict):
             start_time > start_date - timedelta(days=evg["leadtime_Max"]) and
             start_time < finish_date
         )
+
+    @property
+    def can_open_by(self):
+        """ Returns the datetime at which this event can open according to
+            leadtime_Max
+        """
+        from datetime import datetime, timedelta
+        evg = self.eventgroup
+        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
+        return (start_date - timedelta(days=evg["leadtime_Max"]))
