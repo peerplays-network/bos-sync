@@ -148,7 +148,11 @@ class Lookup(dict, BlockchainInstance):
             broadcasts
         """
         log.debug(Lookup.direct_buffer.broadcast())
-        log.debug(Lookup.proposal_buffer.broadcast())
+        proposals = Lookup.proposal_buffer.broadcast()
+        log.debug(proposals)
+        self.clear_proposal_buffer()
+        self.clear_direct_buffer()
+        return proposals
 
     # List calls
     def list_sports(self):
