@@ -56,6 +56,8 @@ class Lookup(dict, BlockchainInstance):
     ):
         """ Let's load all the data from the folder and its subfolders
         """
+        kwargs.pop("proposer", None)  # Do not forward proposer
+        kwargs.pop("approver", None)  # Do not forward approver
         BlockchainInstance.__init__(self, *args, **kwargs)
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
@@ -148,7 +150,11 @@ class Lookup(dict, BlockchainInstance):
             broadcasts
         """
         log.debug(Lookup.direct_buffer.broadcast())
-        log.debug(Lookup.proposal_buffer.broadcast())
+        proposals = Lookup.proposal_buffer.broadcast()
+        log.debug(proposals)
+        self.clear_proposal_buffer()
+        self.clear_direct_buffer()
+        return proposals
 
     # List calls
     def list_sports(self):
