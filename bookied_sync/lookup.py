@@ -48,7 +48,6 @@ class Lookup(dict, BlockchainInstance):
     def __init__(
         self,
         sports_folder=None,
-        peerplays_instance=None,
         proposing_account=None,
         approving_account=None,
         *args,
@@ -59,6 +58,7 @@ class Lookup(dict, BlockchainInstance):
         kwargs.pop("proposer", None)  # Do not forward proposer
         kwargs.pop("approver", None)  # Do not forward approver
         BlockchainInstance.__init__(self, *args, **kwargs)
+
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
