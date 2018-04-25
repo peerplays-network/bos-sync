@@ -137,7 +137,9 @@ class LookupBettingMarketGroup(Lookup, dict):
             all([a in chainsdescr for a in lookupdescr]) and
             all([b in lookupdescr for b in chainsdescr]) and
             (not test_event or event_id == self.event.id) and
-            (not test_rule or rules_id == self.rules.id) and
+            # FIXME: This needs to be properly tested by unit tests, for some
+            # reasons this does sometimes fail to match
+            #(not test_rule or rules_id == self.rules.id) and
             (not test_status or status == self.get(status))
         ):
             return True
