@@ -187,7 +187,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             event_id=self.event.id,
             rules_id=self.rules.id,
             asset=asset["id"],
-            delay_before_settling=self.get("delay_before_settling", 60 * 5),
+            delay_before_settling=self.get("delay_before_settling", 0),
             never_in_play=self.get("never_in_play", False),
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer
