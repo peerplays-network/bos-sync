@@ -3,4 +3,4 @@ bookiesports
 
 pyyaml
 colorlog
-python-dateutil
+dateutils
