@@ -337,17 +337,20 @@ class LookupEvent(Lookup, dict):
         return status.update()
 
     @property
+    def start_datetime(self):
+        return self["start_time"]
+
+    @property
     def can_open(self):
         """ Only update if after leadtime
         """
         from datetime import datetime, timedelta
-        start_time = self["start_time"]
         evg = self.eventgroup
-        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
-        finish_date = datetime.strptime(evg.get("finish_date"), "%Y/%m/%d")
+        start_date = evg.start_datetime
+        finish_date = evg.finish_datetime
         return (
-            start_time > start_date - timedelta(days=evg["leadtime_Max"]) and
-            start_time < finish_date
+            self.start_datetime > start_date - timedelta(days=evg["leadtime_Max"]) and
+            self.start_datetime < finish_date
         )
 
     @property
@@ -357,5 +360,5 @@ class LookupEvent(Lookup, dict):
         """
         from datetime import datetime, timedelta
         evg = self.eventgroup
-        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
+        start_date = evg.start_datetime
         return (start_date - timedelta(days=evg["leadtime_Max"]))
