@@ -1,11 +1,11 @@
-import datetime
+from datetime import datetime, timedelta
 from .lookup import Lookup
 from .sport import LookupSport
 from .eventgroup import LookupEventGroup
 from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
-from peerplays.utils import formatTime, parse_time
-from . import log
+from peerplays.utils import formatTime
+# from . import log
 
 
 def substitution(teams, scheme):
@@ -84,7 +84,7 @@ class LookupEvent(Lookup, dict):
             teams[1])
 
         if start_time and not isinstance(
-            self["start_time"], datetime.datetime
+            self["start_time"], datetime
         ):
             raise ValueError(
                 "'start_time' must be instance of datetime.datetime()")
@@ -121,7 +121,8 @@ class LookupEvent(Lookup, dict):
         """ This class method is used to find an event by providing:
 
             :param str sport_identifier: Identifier string for the sport
-            :param str eventgroup_identifier: Identifier string for the eventgroup/league
+            :param str eventgroup_identifier: Identifier string for the
+                eventgroup/league
             :param list teams: list of teams
             :param datetime.datetime start_time: Time of start
 
@@ -344,12 +345,13 @@ class LookupEvent(Lookup, dict):
     def can_open(self):
         """ Only update if after leadtime
         """
-        from datetime import datetime, timedelta
         evg = self.eventgroup
         start_date = evg.start_datetime
         finish_date = evg.finish_datetime
         return (
-            self.start_datetime > start_date - timedelta(days=evg["leadtime_Max"]) and
+            self.start_datetime > (
+                start_date - timedelta(days=evg.leadtime_Max)
+            ) and
             self.start_datetime < finish_date
         )
 
@@ -358,7 +360,6 @@ class LookupEvent(Lookup, dict):
         """ Returns the datetime at which this event can open according to
             leadtime_Max
         """
-        from datetime import datetime, timedelta
         evg = self.eventgroup
         start_date = evg.start_datetime
-        return (start_date - timedelta(days=evg["leadtime_Max"]))
+        return (start_date - timedelta(days=evg.leadtime_Max))
