@@ -348,6 +348,11 @@ class LookupEvent(Lookup, dict):
         evg = self.eventgroup
         start_date = evg.start_datetime
         finish_date = evg.finish_datetime
+
+        # Return True in case any of the parameters are not provided
+        if not start_date or not finish_date or not evg.leadtime_Max:
+            return True
+
         return (
             self.start_datetime > (
                 start_date - timedelta(days=evg.leadtime_Max)
@@ -362,4 +367,9 @@ class LookupEvent(Lookup, dict):
         """
         evg = self.eventgroup
         start_date = evg.start_datetime
-        return (start_date - timedelta(days=evg.leadtime_Max))
+        if not evg.leadtime_Max and start_date:
+            return start_date
+        elif not start_date:
+            return datetime.utcnow()
+        else:
+            return (start_date - timedelta(days=evg.leadtime_Max))
