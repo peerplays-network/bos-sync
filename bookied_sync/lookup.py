@@ -44,10 +44,12 @@ class Lookup(dict, BlockchainInstance):
 
     _approving_account = None
     _proposing_account = None
+    _network_name = None
 
     def __init__(
         self,
         sports_folder=None,
+        network=None,
         proposing_account=None,
         approving_account=None,
         *args,
@@ -91,11 +93,24 @@ class Lookup(dict, BlockchainInstance):
         # Do not reload sports if already stored in data
         if (
             not Lookup.data or
-            Lookup.sports_folder != sports_folder
+            (sports_folder and Lookup.sports_folder != sports_folder) or
+            (network and Lookup._network_name != network)
         ):
             # Load sports
-            self.data["sports"] = BookieSports(sports_folder)
+            self._bookiesports = BookieSports(
+                network=network,
+                sports_folder=sports_folder
+            )
             Lookup.sports_folder = sports_folder
+            Lookup._network_name = network
+            self.data["sports"] = self._bookiesports
+
+            # Ensure that the node is on the right network
+            sports_chain_id = self._bookiesports.chain_id
+            node_chain_id = self.blockchain.rpc.chain_params["chain_id"]
+            assert sports_chain_id == "*" or sports_chain_id == node_chain_id, "You are connecting to {} while network {} requires {}".format(
+                node_chain_id, network, sports_chain_id
+            )
 
     # Redirect those to object variables to be "static" (singeltons)
     @property
