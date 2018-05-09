@@ -171,12 +171,12 @@ class LookupEventGroup(Lookup, dict):
 
     @property
     def start_datetime(self):
-        return self["start_date"]
+        return self.get("start_date")
 
     @property
     def finish_datetime(self):
-        return self["finish_date"]
+        return self.get("finish_date")
 
     @property
     def leadtime_Max(self):
-        return self["leadtime_Max"]
+        return self.get("leadtime_Max")
