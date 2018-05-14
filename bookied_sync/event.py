@@ -342,12 +342,20 @@ class LookupEvent(Lookup, dict):
         return self["start_time"]
 
     @property
+    def event_group_finish_datetime(self):
+        return self.eventgroup.finish_datetime
+
+    @property
+    def event_group_start_datetime(self):
+        return self.eventgroup.start_datetime
+
+    @property
     def can_open(self):
         """ Only update if after leadtime
         """
         evg = self.eventgroup
-        start_date = evg.start_datetime
-        finish_date = evg.finish_datetime
+        start_date = self.event_group_start_datetime
+        finish_date = self.event_group_finish_datetime
 
         # Return True in case any of the parameters are not provided
         if not start_date or not finish_date or not evg.leadtime_Max:
