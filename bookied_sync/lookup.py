@@ -233,7 +233,12 @@ class Lookup(dict, BlockchainInstance):
                     log.info((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
-                    self.propose_new()
+                    try:
+                        self.propose_new()
+                    except Exception as e:
+                        log.critical(
+                            "Trying to propose new object but failed: {}".format(str(e))
+                        )
 
                 # We do not need to go over for proposing an update
                 return
@@ -264,7 +269,12 @@ class Lookup(dict, BlockchainInstance):
                     self.__class__.__name__,
                     str(self.get("name", ""))
                 ))
-                self.propose_update()
+                try:
+                    self.propose_update()
+                except Exception as e:
+                    log.critical(
+                        "Trying to propose an update but failed: {}".format(str(e))
+                    )
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)
