@@ -76,8 +76,6 @@ class LookupBettingMarket(Lookup, dict):
         group_id = bmg[prefix + "group_id"]
 
         test_group = group_id and group_id[0] == "1"
-        if test_group:
-            BettingMarketGroup(group_id)
 
         """ We need to properly deal with the fact that betting markets
             cannot be distinguished alone from the payload if they are bundled
