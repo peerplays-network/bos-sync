@@ -7,6 +7,7 @@ from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
 from peerplays.witness import Witnesses
 from .exceptions import ObjectNotFoundError
+from .update import UpdateTransaction
 from bookiesports import BookieSports
 from . import log
 
@@ -149,12 +150,12 @@ class Lookup(dict, BlockchainInstance):
         Lookup.direct_buffer = None
         Lookup.proposal_buffer = None
 
-    def clear_proposal_buffer(self):
+    def clear_proposal_buffer(self, expiration=60 * 60):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
             proposer=self.proposing_account,
-            proposal_expiration=60 * 60  # 1 hour
+            proposal_expiration=expiration
         )
 
     def clear_direct_buffer(self):
@@ -164,12 +165,36 @@ class Lookup(dict, BlockchainInstance):
         """ Since we are using multiple txbuffers, we need to do multiple
             broadcasts
         """
-        log.debug(Lookup.direct_buffer.broadcast())
-        proposals = Lookup.proposal_buffer.broadcast()
-        log.debug(proposals)
+        txs = list()
+
+        for tx in [
+            Lookup.direct_buffer.broadcast(),
+            Lookup.proposal_buffer.broadcast()
+        ]:
+            if tx and dict(tx) and tx.get("operations", []):
+                txs.append(UpdateTransaction(tx))
+
         self.clear_proposal_buffer()
         self.clear_direct_buffer()
-        return proposals
+        return txs
+
+    def proposal_transactions(self):
+        return Lookup.proposal_buffer.parent.json()
+
+    def proposal_operations(self):
+        return self.proposal_transactions()["operations"]
+
+    def approval_transactions(self):
+        return Lookup.direct_buffer.parent.json()
+
+    def approval_operations(self):
+        return self.approval_transactions()["operations"]
+
+    def set_blocking(self, block=True):
+        """ This sets a flag that forces the broadcast to block until the
+            transactions made it into a block
+        """
+        self.peerplays.set_blocking(block)
 
     # List calls
     def list_sports(self):
