@@ -1,11 +1,11 @@
-import datetime
+from datetime import datetime, timedelta
 from .lookup import Lookup
 from .sport import LookupSport
 from .eventgroup import LookupEventGroup
 from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
-from peerplays.utils import formatTime, parse_time
-from . import log
+from peerplays.utils import formatTime
+# from . import log
 
 
 def substitution(teams, scheme):
@@ -84,7 +84,7 @@ class LookupEvent(Lookup, dict):
             teams[1])
 
         if start_time and not isinstance(
-            self["start_time"], datetime.datetime
+            self["start_time"], datetime
         ):
             raise ValueError(
                 "'start_time' must be instance of datetime.datetime()")
@@ -121,7 +121,8 @@ class LookupEvent(Lookup, dict):
         """ This class method is used to find an event by providing:
 
             :param str sport_identifier: Identifier string for the sport
-            :param str eventgroup_identifier: Identifier string for the eventgroup/league
+            :param str eventgroup_identifier: Identifier string for the
+                eventgroup/league
             :param list teams: list of teams
             :param datetime.datetime start_time: Time of start
 
@@ -337,17 +338,34 @@ class LookupEvent(Lookup, dict):
         return status.update()
 
     @property
+    def start_datetime(self):
+        return self["start_time"]
+
+    @property
+    def event_group_finish_datetime(self):
+        return self.eventgroup.finish_datetime
+
+    @property
+    def event_group_start_datetime(self):
+        return self.eventgroup.start_datetime
+
+    @property
     def can_open(self):
         """ Only update if after leadtime
         """
-        from datetime import datetime, timedelta
-        start_time = self["start_time"]
         evg = self.eventgroup
-        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
-        finish_date = datetime.strptime(evg.get("finish_date"), "%Y/%m/%d")
+        start_date = self.event_group_start_datetime
+        finish_date = self.event_group_finish_datetime
+
+        # Return True in case any of the parameters are not provided
+        if not start_date or not finish_date or not evg.leadtime_Max:
+            return True
+
         return (
-            start_time > start_date - timedelta(days=evg["leadtime_Max"]) and
-            start_time < finish_date
+            self.start_datetime > (
+                start_date - timedelta(days=evg.leadtime_Max)
+            ) and
+            self.start_datetime < finish_date
         )
 
     @property
@@ -355,7 +373,11 @@ class LookupEvent(Lookup, dict):
         """ Returns the datetime at which this event can open according to
             leadtime_Max
         """
-        from datetime import datetime, timedelta
         evg = self.eventgroup
-        start_date = datetime.strptime(evg.get("start_date"), "%Y/%m/%d")
-        return (start_date - timedelta(days=evg["leadtime_Max"]))
+        start_date = evg.start_datetime
+        if not evg.leadtime_Max and start_date:
+            return start_date
+        elif not start_date:
+            return datetime.utcnow()
+        else:
+            return (start_date - timedelta(days=evg.leadtime_Max))

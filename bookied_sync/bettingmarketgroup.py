@@ -68,9 +68,6 @@ class LookupBettingMarketGroup(Lookup, dict):
                     )
                 )
 
-        # FIXME: Figure out if the name has a variable
-        # FIXME: Figure out if this is a dynamic bmg
-
     @property
     def sport(self):
         """ Return the sport for this BMG
@@ -130,14 +127,16 @@ class LookupBettingMarketGroup(Lookup, dict):
             if full_proposal:
                 operation_id = int(event_id.split(".")[2])
                 parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
-                if not self.parent.test_operation_equal(parent_op[1]):
+                if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
                     return False
 
         if (
             all([a in chainsdescr for a in lookupdescr]) and
             all([b in lookupdescr for b in chainsdescr]) and
             (not test_event or event_id == self.event.id) and
-            (not test_rule or rules_id == self.rules.id) and
+            # FIXME: This needs to be properly tested by unit tests, for some
+            # reasons this does sometimes fail to match
+            # (not test_rule or rules_id == self.rules.id) and
             (not test_status or status == self.get(status))
         ):
             return True
@@ -185,7 +184,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             event_id=self.event.id,
             rules_id=self.rules.id,
             asset=asset["id"],
-            delay_before_settling=self.get("delay_before_settling", 60 * 5),
+            delay_before_settling=self.get("delay_before_settling", 0),
             never_in_play=self.get("never_in_play", False),
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer

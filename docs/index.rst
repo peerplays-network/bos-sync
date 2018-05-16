@@ -24,6 +24,15 @@ blockchain and simplify the use of proposals and approvals to do so.
    participant
    exceptions
 
+API
+---
+
+.. toctree::
+   :maxdepth: 3
+
+   bookied_sync
+
+
 Indices and tables
 ==================
 

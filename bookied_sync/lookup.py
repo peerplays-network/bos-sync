@@ -7,6 +7,7 @@ from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
 from peerplays.witness import Witnesses
 from .exceptions import ObjectNotFoundError
+from .update import UpdateTransaction
 from bookiesports import BookieSports
 from . import log
 
@@ -44,11 +45,12 @@ class Lookup(dict, BlockchainInstance):
 
     _approving_account = None
     _proposing_account = None
+    _network_name = None
 
     def __init__(
         self,
         sports_folder=None,
-        peerplays_instance=None,
+        network=None,
         proposing_account=None,
         approving_account=None,
         *args,
@@ -59,6 +61,7 @@ class Lookup(dict, BlockchainInstance):
         kwargs.pop("proposer", None)  # Do not forward proposer
         kwargs.pop("approver", None)  # Do not forward approver
         BlockchainInstance.__init__(self, *args, **kwargs)
+
         # self._cwd = os.path.dirname(os.path.realpath(__file__))
         self._cwd = os.getcwd()
 
@@ -91,11 +94,24 @@ class Lookup(dict, BlockchainInstance):
         # Do not reload sports if already stored in data
         if (
             not Lookup.data or
-            Lookup.sports_folder != sports_folder
+            (sports_folder and Lookup.sports_folder != sports_folder) or
+            (network and Lookup._network_name != network)
         ):
             # Load sports
-            self.data["sports"] = BookieSports(sports_folder)
+            self._bookiesports = BookieSports(
+                network=network,
+                sports_folder=sports_folder
+            )
             Lookup.sports_folder = sports_folder
+            Lookup._network_name = network
+            self.data["sports"] = self._bookiesports
+
+            # Ensure that the node is on the right network
+            sports_chain_id = self._bookiesports.chain_id
+            node_chain_id = self.blockchain.rpc.chain_params["chain_id"]
+            assert sports_chain_id == "*" or sports_chain_id == node_chain_id, "You are connecting to {} while network {} requires {}".format(
+                node_chain_id, network, sports_chain_id
+            )
 
     # Redirect those to object variables to be "static" (singeltons)
     @property
@@ -134,12 +150,12 @@ class Lookup(dict, BlockchainInstance):
         Lookup.direct_buffer = None
         Lookup.proposal_buffer = None
 
-    def clear_proposal_buffer(self):
+    def clear_proposal_buffer(self, expiration=60 * 60):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
             proposer=self.proposing_account,
-            proposal_expiration=60 * 60  # 1 hour
+            proposal_expiration=expiration
         )
 
     def clear_direct_buffer(self):
@@ -149,12 +165,36 @@ class Lookup(dict, BlockchainInstance):
         """ Since we are using multiple txbuffers, we need to do multiple
             broadcasts
         """
-        log.debug(Lookup.direct_buffer.broadcast())
-        proposals = Lookup.proposal_buffer.broadcast()
-        log.debug(proposals)
+        txs = list()
+
+        for tx in [
+            Lookup.direct_buffer.broadcast(),
+            Lookup.proposal_buffer.broadcast()
+        ]:
+            if tx and dict(tx) and tx.get("operations", []):
+                txs.append(UpdateTransaction(tx))
+
         self.clear_proposal_buffer()
         self.clear_direct_buffer()
-        return proposals
+        return txs
+
+    def proposal_transactions(self):
+        return Lookup.proposal_buffer.parent.json()
+
+    def proposal_operations(self):
+        return self.proposal_transactions()["operations"]
+
+    def approval_transactions(self):
+        return Lookup.direct_buffer.parent.json()
+
+    def approval_operations(self):
+        return self.approval_transactions()["operations"]
+
+    def set_blocking(self, block=True):
+        """ This sets a flag that forces the broadcast to block until the
+            transactions made it into a block
+        """
+        self.peerplays.set_blocking(block)
 
     # List calls
     def list_sports(self):
@@ -218,7 +258,12 @@ class Lookup(dict, BlockchainInstance):
                     log.info((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
-                    self.propose_new()
+                    try:
+                        self.propose_new()
+                    except Exception as e:
+                        log.critical(
+                            "Trying to propose new object but failed: {}".format(str(e))
+                        )
 
                 # We do not need to go over for proposing an update
                 return
@@ -249,7 +294,12 @@ class Lookup(dict, BlockchainInstance):
                     self.__class__.__name__,
                     str(self.get("name", ""))
                 ))
-                self.propose_update()
+                try:
+                    self.propose_update()
+                except Exception as e:
+                    log.critical(
+                        "Trying to propose an update but failed: {}".format(str(e))
+                    )
 
     def get_pending_operations(self, account="witness-account"):
         pending_proposals = Proposals(account)

@@ -76,8 +76,6 @@ class LookupBettingMarket(Lookup, dict):
         group_id = bmg[prefix + "group_id"]
 
         test_group = group_id and group_id[0] == "1"
-        if test_group:
-            BettingMarketGroup(group_id)
 
         """ We need to properly deal with the fact that betting markets
             cannot be distinguished alone from the payload if they are bundled
@@ -88,7 +86,7 @@ class LookupBettingMarket(Lookup, dict):
             if full_proposal:
                 operation_id = int(group_id.split(".")[2])
                 parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
-                if not self.parent.test_operation_equal(parent_op[1]):
+                if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
                     return False
 
         if (all([a in chainsdescr for a in lookupdescr]) and
