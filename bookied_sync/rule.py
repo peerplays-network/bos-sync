@@ -64,8 +64,8 @@ class LookupRules(Lookup, dict):
         """ Test if data on chain matches lookup
         """
         if "id" in self:
-            sport = Rule(self["id"])
-            if self.test_operation_equal(sport):
+            rule = Rule(self["id"])
+            if self.test_operation_equal(rule):
                 return True
         return False
 

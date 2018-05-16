@@ -68,9 +68,6 @@ class LookupBettingMarketGroup(Lookup, dict):
                     )
                 )
 
-        # FIXME: Figure out if the name has a variable
-        # FIXME: Figure out if this is a dynamic bmg
-
     @property
     def sport(self):
         """ Return the sport for this BMG
@@ -139,7 +136,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             (not test_event or event_id == self.event.id) and
             # FIXME: This needs to be properly tested by unit tests, for some
             # reasons this does sometimes fail to match
-            #(not test_rule or rules_id == self.rules.id) and
+            # (not test_rule or rules_id == self.rules.id) and
             (not test_status or status == self.get(status))
         ):
             return True
