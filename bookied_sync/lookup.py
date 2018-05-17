@@ -353,6 +353,8 @@ class Lookup(dict, BlockchainInstance):
         if pid[:3] == "0.0":
             log.info("Cannot approve pending-for-broadcast proposals")
             return
+        assert self.approving_account, "No approving_account defined!"
+
         Lookup.approval_map[pid][oid] = True
 
         def pretty_proposal_map():
