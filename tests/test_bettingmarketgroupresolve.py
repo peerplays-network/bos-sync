@@ -46,39 +46,41 @@ test_operation_dicts = [
 additional_objects = dict()
 additional_objects["rules"] = [
     {
-     'name': [
-         ['en', 'R_NFL_MO_1'],
-     ],
-     'id': '1.19.0',
-     'description': [
-         ['en', 'R_NFL_MO_1'],
-         ['de', 'R_NFL_MO_1'],
-         ['grading', json.dumps({
-             'metric': '{result.hometeam} - {result.awayteam}',
-             'resolutions': [{'win': '{metric} > 0',
-                              'not_win': '{metric} <= 0',
-                              'void': 'False'},
-                             {'win': '{metric} < 0',
-                              'not_win': '{metric} >= 0',
-                              'void': 'False'},
-                             {'win': '{metric} == 0',
-                              'not_win': '{metric} != 0',
-                              'void': 'False'}]})
-         ]
-     ]}
+        'name': [
+            ['en', 'R_NFL_MO_1'],
+        ],
+        'id': '1.19.0',
+        'description': [
+            ['en', 'R_NFL_MO_1'],
+            ['de', 'R_NFL_MO_1'],
+            ['grading', json.dumps({
+                'metric': '{result.hometeam} - {result.awayteam}',
+                'resolutions': [{'win': '{metric} > 0',
+                                 'not_win': '{metric} <= 0',
+                                 'void': 'False'},
+                                {'win': '{metric} < 0',
+                                 'not_win': '{metric} >= 0',
+                                 'void': 'False'},
+                                {'win': '{metric} == 0',
+                                 'not_win': '{metric} != 0',
+                                 'void': 'False'}]})]
+        ]}
 ]
 
 additional_objects["bms"] = [
-    {"id": "1.21.257", "description": [["en", "Demo wins"]], "group_id": "1.18.0"},
-    {"id": "1.21.258", "description": [["en", "Foobar wins"]], "group_id": "1.18.0"},
-    {"id": "1.21.259", "description": [["en", "Draw"]], "group_id": "1.18.0"},
+    {"id": "1.21.257",
+     "description": [["en", "Demo wins"]], "group_id": "1.18.0"},
+    {"id": "1.21.258",
+     "description": [["en", "Foobar wins"]], "group_id": "1.18.0"},
+    {"id": "1.21.259",
+     "description": [["en", "Draw"]], "group_id": "1.18.0"},
 ]
 wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
 
 ppy = PeerPlays(
-                nobroadcast=True,
-                wif=[wif]   # ensure we can sign
-            )
+    nobroadcast=True,
+    wif=[wif]   # ensure we can sign
+)
 set_shared_blockchain_instance(ppy)
 mock_resolutions = (
     "bookied_sync.bettingmarketgroupresolve."
@@ -129,7 +131,9 @@ class Testcases(unittest.TestCase):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroupResolve)
 
     def test_sport(self):
-        self.assertEqual(self.lookup.sport["identifier"], self.event.sport["identifier"])
+        self.assertEqual(
+            self.lookup.sport["identifier"],
+            self.event.sport["identifier"])
 
     def test_rules(self):
         self.assertIsInstance(self.lookup.rules, LookupRules)
@@ -180,9 +184,9 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'not_win'],
-        # ['1.21.258', 'win'],
-        # ['1.21.259', 'not_win']]
+        #    [['1.21.257', 'not_win'],
+        #     ['1.21.258', 'win'],
+        #     ['1.21.259', 'not_win']]
         self.assertEqual(res[0][1], "not_win")
         self.assertEqual(res[1][1], "win")
         self.assertEqual(res[2][1], "not_win")
@@ -193,9 +197,9 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'not_win'],
-        # ['1.21.258', 'not_win'],
-        # ['1.21.259', 'win']]
+        #    [['1.21.257', 'not_win'],
+        #     ['1.21.258', 'not_win'],
+        #     ['1.21.259', 'win']]
         self.assertEqual(res[0][1], "not_win")
         self.assertEqual(res[1][1], "not_win")
         self.assertEqual(res[2][1], "win")
@@ -206,9 +210,9 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'win'],
-        # ['1.21.258', 'not_win'],
-        # ['1.21.259', 'not_win']]
+        #    [['1.21.257', 'win'],
+        #     ['1.21.258', 'not_win'],
+        #     ['1.21.259', 'not_win']]
         self.assertEqual(res[0][1], "win")
         self.assertEqual(res[1][1], "not_win")
         self.assertEqual(res[2][1], "not_win")
