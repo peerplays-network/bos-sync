@@ -115,7 +115,7 @@ class LookupSport(Lookup, dict):
     def is_synced(self):
         """ Test if data on chain matches lookup
         """
-        if "id" in self:
+        if "id" in self and self["id"]:
             sport = Sport(self["id"])
             if self.test_operation_equal(sport):
                 return True

@@ -120,7 +120,7 @@ class LookupBettingMarket(Lookup, dict):
     def is_synced(self):
         """ Test if data on chain matches lookup
         """
-        if "id" in self:
+        if "id" in self and self["id"]:
             bmg = BettingMarket(self["id"])
             if self.test_operation_equal(bmg):
                 return True

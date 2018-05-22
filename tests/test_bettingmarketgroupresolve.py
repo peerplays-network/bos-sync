@@ -12,6 +12,7 @@ from peerplays.bettingmarket import BettingMarkets
 from peerplays.bettingmarketgroup import BettingMarketGroups
 from peerplays.blockchainobject import BlockchainObject, ObjectCache
 from peerplays.instance import set_shared_blockchain_instance
+from peerplays.proposal import Proposals
 from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
@@ -46,39 +47,41 @@ test_operation_dicts = [
 additional_objects = dict()
 additional_objects["rules"] = [
     {
-     'name': [
-         ['en', 'R_NFL_MO_1'],
-     ],
-     'id': '1.19.0',
-     'description': [
-         ['en', 'R_NFL_MO_1'],
-         ['de', 'R_NFL_MO_1'],
-         ['grading', json.dumps({
-             'metric': '{result.hometeam} - {result.awayteam}',
-             'resolutions': [{'win': '{metric} > 0',
-                              'not_win': '{metric} <= 0',
-                              'void': 'False'},
-                             {'win': '{metric} < 0',
-                              'not_win': '{metric} >= 0',
-                              'void': 'False'},
-                             {'win': '{metric} == 0',
-                              'not_win': '{metric} != 0',
-                              'void': 'False'}]})
-         ]
-     ]}
+        'name': [
+            ['en', 'R_NFL_MO_1'],
+        ],
+        'id': '1.19.0',
+        'description': [
+            ['en', 'R_NFL_MO_1'],
+            ['de', 'R_NFL_MO_1'],
+            ['grading', json.dumps({
+                'metric': '{result.hometeam} - {result.awayteam}',
+                'resolutions': [{'win': '{metric} > 0',
+                                 'not_win': '{metric} <= 0',
+                                 'void': 'False'},
+                                {'win': '{metric} < 0',
+                                 'not_win': '{metric} >= 0',
+                                 'void': 'False'},
+                                {'win': '{metric} == 0',
+                                 'not_win': '{metric} != 0',
+                                 'void': 'False'}]})]
+        ]}
 ]
 
 additional_objects["bms"] = [
-    {"id": "1.21.257", "description": [["en", "Demo wins"]], "group_id": "1.18.0"},
-    {"id": "1.21.258", "description": [["en", "Foobar wins"]], "group_id": "1.18.0"},
-    {"id": "1.21.259", "description": [["en", "Draw"]], "group_id": "1.18.0"},
+    {"id": "1.21.257",
+     "description": [["en", "Demo wins"]], "group_id": "1.18.0"},
+    {"id": "1.21.258",
+     "description": [["en", "Foobar wins"]], "group_id": "1.18.0"},
+    {"id": "1.21.259",
+     "description": [["en", "Draw"]], "group_id": "1.18.0"},
 ]
 wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
 
 ppy = PeerPlays(
-                nobroadcast=True,
-                wif=[wif]   # ensure we can sign
-            )
+    nobroadcast=True,
+    wif=[wif]   # ensure we can sign
+)
 set_shared_blockchain_instance(ppy)
 mock_resolutions = (
     "bookied_sync.bettingmarketgroupresolve."
@@ -129,7 +132,9 @@ class Testcases(unittest.TestCase):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroupResolve)
 
     def test_sport(self):
-        self.assertEqual(self.lookup.sport["identifier"], self.event.sport["identifier"])
+        self.assertEqual(
+            self.lookup.sport["identifier"],
+            self.event.sport["identifier"])
 
     def test_rules(self):
         self.assertIsInstance(self.lookup.rules, LookupRules)
@@ -180,9 +185,9 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'not_win'],
-        # ['1.21.258', 'win'],
-        # ['1.21.259', 'not_win']]
+        #    [['1.21.257', 'not_win'],
+        #     ['1.21.258', 'win'],
+        #     ['1.21.259', 'not_win']]
         self.assertEqual(res[0][1], "not_win")
         self.assertEqual(res[1][1], "win")
         self.assertEqual(res[2][1], "not_win")
@@ -193,9 +198,9 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'not_win'],
-        # ['1.21.258', 'not_win'],
-        # ['1.21.259', 'win']]
+        #    [['1.21.257', 'not_win'],
+        #     ['1.21.258', 'not_win'],
+        #     ['1.21.259', 'win']]
         self.assertEqual(res[0][1], "not_win")
         self.assertEqual(res[1][1], "not_win")
         self.assertEqual(res[2][1], "win")
@@ -206,9 +211,51 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #[['1.21.257', 'win'],
-        # ['1.21.258', 'not_win'],
-        # ['1.21.259', 'not_win']]
+        #    [['1.21.257', 'win'],
+        #     ['1.21.258', 'not_win'],
+        #     ['1.21.259', 'not_win']]
         self.assertEqual(res[0][1], "win")
         self.assertEqual(res[1][1], "not_win")
         self.assertEqual(res[2][1], "not_win")
+
+    def test_approve_proposal(self):
+        # We need an approver account
+        self.lookup.set_approving_account("init0")
+
+        # We need to delete id else, bos-sync will not try to create
+        self.lookup["id"] = None
+        self.lookup.clear_proposal_buffer()
+        tx = self.lookup.propose_new()
+        tx = tx.json()
+        propops = tx["operations"][0][1]["proposed_ops"][0]["op"]
+        Proposals.cache["1.2.1"] = [{
+            'available_active_approvals': [],
+            'available_key_approvals': [],
+            'available_owner_approvals': [],
+            'expiration_time': '2018-05-17T15:20:25',
+            'id': '1.10.2413',
+            'proposed_transaction': {'expiration': '2018-05-17T15:17:48',
+                                     'extensions': [],
+                                     'operations': [propops],
+                                     'ref_block_num': 0,
+                                     'ref_block_prefix': 0},
+            'proposer': '1.2.8',
+            'required_active_approvals': ['1.2.1'],
+            'required_owner_approvals': []
+        }]
+        # import logging
+        # logging.basicConfig(level=logging.DEBUG)
+        pending_propos = list(self.lookup.has_pending_new())
+        self.assertIn(
+            pending_propos[0]["pid"],
+            self.lookup.approval_map
+        )
+        self.assertFalse(self.lookup.is_synced())
+        self.assertEqual(len(pending_propos), 1)
+        self.assertEqual(pending_propos[0]["pid"], "1.10.2413")
+        self.lookup.approve(**pending_propos[0])
+        self.assertNotIn(
+            pending_propos[0]["pid"],
+            self.lookup.approval_map
+        )
+

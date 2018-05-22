@@ -353,6 +353,8 @@ class Lookup(dict, BlockchainInstance):
         if pid[:3] == "0.0":
             log.info("Cannot approve pending-for-broadcast proposals")
             return
+        assert self.approving_account, "No approving_account defined!"
+
         Lookup.approval_map[pid][oid] = True
 
         def pretty_proposal_map():
@@ -485,6 +487,50 @@ class Lookup(dict, BlockchainInstance):
         """
         if hasattr(self, "parent"):
             return self.parent.id
+
+    def is_bookiesports_in_sync(self):
+        """ Test if bookiesports is in sync
+        """
+        for sport in self.list_sports():
+            if not sport.is_synced():
+                return False
+
+            # Go through all event groups of the sport
+            for e in sport.eventgroups:
+                if not e.is_synced():
+                    return False
+
+            # Go through all the rules linked in the sport
+            for r in sport.rules:
+                if not r.is_synced():
+                    return False
+
+        return True
+
+    def sync_bookiesports(self):
+        """ Sync eventgroups and sports according to bookiesports/lookup
+        """
+        # Go through all sports
+        for sport in self.list_sports():
+
+            if not sport.is_synced():
+                log.warning("Updating sport {}".format(sport["identifier"]))
+                sport.update()
+
+            # Go through all event groups of the sport
+            for e in sport.eventgroups:
+
+                if not e.is_synced():
+                    log.warning("Updating eventgroup {}".format(e["identifier"]))
+                    e.update()
+
+            # Go through all the rules linked in the sport
+            for r in sport.rules:
+
+                if not r.is_synced():
+                    log.warning("Updating rule {}".format(r["identifier"]))
+                    r.update()
+        return self
 
     # Prototypes #############################################################
     def test_operation_equal(self, sport, **kwargs):
