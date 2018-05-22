@@ -1,5 +1,5 @@
 peerplays==0.1.22
-bookiesports==0.0.24
+bookiesports
 
 pyyaml
 colorlog
