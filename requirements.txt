@@ -1,4 +1,4 @@
-peerplays>=0.1.22
+peerplays
 bookiesports
 
 pyyaml
