@@ -47,14 +47,18 @@ class Testcases(unittest.TestCase):
 
         Lookup._clear()
         Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             peerplays_instance=ppy
         )
         self.setupCache()
         self.lookup = LookupEvent(**miniumum_event_dict)
+
+    def setUp(self):
+        self.lookup.clear_proposal_buffer()
 
     def setupCache(self):
         _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)

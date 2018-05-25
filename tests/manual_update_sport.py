@@ -9,7 +9,7 @@ from peerplays.instance import set_shared_blockchain_instance
 import logging
 logging.basicConfig(level=logging.INFO)
 
-UNLOCK = "posaune"
+UNLOCK = ""
 
 ppy = PeerPlays(
     nobroadcast=False,
@@ -25,9 +25,10 @@ class Testcases(unittest.TestCase):
 
         Lookup._clear()
         Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             peerplays_instance=ppy
         )
