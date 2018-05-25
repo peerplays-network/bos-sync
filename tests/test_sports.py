@@ -12,9 +12,10 @@ class Testcases(unittest.TestCase):
 
         Lookup._clear()
         self.lookup = Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             peerplays_instance=PeerPlays(
                 nobroadcast=True,
@@ -30,8 +31,8 @@ class Testcases(unittest.TestCase):
         self.assertIsInstance(sports, list)
         for sport in sports:
             self.assertIsInstance(sport, LookupSport)
-        self.assertEqual(len(sports), 1)
-        self.assertEqual(sports[0]["identifier"], "AmericanFootball")
+        self.assertEqual(len(sports), 2)
+        self.assertIn("AmericanFootball", [x["identifier"] for x in sports])
 
     def test_get_sport(self):
         sport = self.lookup.get_sport("AmericanFootball")

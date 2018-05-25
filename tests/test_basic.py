@@ -14,9 +14,10 @@ class Testcases(unittest.TestCase):
 
     def test_sync(self):
         self.lookup = Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             peerplays_instance=PeerPlays(nobroadcast=True)
         )
@@ -29,16 +30,13 @@ class Testcases(unittest.TestCase):
 
     def test_proper_accounts(self):
         lookup = Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             proposing_account="init0",
             approving_account="init1",
         )
         self.assertEqual(lookup.proposing_account, "init0")
         self.assertEqual(lookup.approving_account, "init1")
-
-    def test_nonexistingsports(self):
-        with self.assertRaises(SportsNotFoundError):
-            Lookup("/tmp/random-non-exiting-sport")

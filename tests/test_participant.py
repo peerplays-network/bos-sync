@@ -13,9 +13,10 @@ class Testcases(unittest.TestCase):
 
         Lookup._clear()
         Lookup(
-            os.path.join(
+            network="unittests",
+            sports_folder=os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "testsports"
+                "bookiesports"
             ),
             peerplays_instance=PeerPlays(
                 nobroadcast=True,
