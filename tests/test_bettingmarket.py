@@ -37,9 +37,9 @@ test_operation_dicts = [
 wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
 
 ppy = PeerPlays(
-                nobroadcast=True,
-                wif=[wif]   # ensure we can sign
-            )
+    nobroadcast=True,
+    wif=[wif]   # ensure we can sign
+)
 set_shared_blockchain_instance(ppy)
 
 
