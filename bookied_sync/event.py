@@ -184,16 +184,19 @@ class LookupEvent(Lookup, dict):
             event_group_id = event["event_group_id"]
             chainseason = event["season"]
             status = event.get("status")
+            start_time = event.get("start_time")
         elif "new_name" in event:
             chainsnames = event.get("new_name")
             event_group_id = event.get("new_sport_id")
             chainseason = event.get("new_season")
             status = event.get("new_status")
+            start_time = event.get("new_start_time")
         else:
             raise ValueError
 
         test_status = self.get("status") and event.get("status")
         test_season = bool(lookupseason) and bool(chainseason)
+        test_start_time = self.get("start_time") and event.get("start_time")
 
         if event_group_id:
             parts = event_group_id.split(".")
@@ -208,7 +211,9 @@ class LookupEvent(Lookup, dict):
                     all([b in lookupseason for b in chainseason]) and
                     all([b in chainseason for b in lookupseason])) and
                 (not event_group_id or self.parent_id == event_group_id) and
-                (not test_status or status == self.get("status"))):
+                (not test_status or status == self.get("status")) and
+                (not test_start_time or start_time == self.get("start_time"))
+        ):
             return True
 
     def find_id(self):
