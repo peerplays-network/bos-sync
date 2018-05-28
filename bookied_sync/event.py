@@ -5,6 +5,7 @@ from .eventgroup import LookupEventGroup
 from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
 from peerplays.utils import formatTime
+from peerplays.utils import parse_time
 # from . import log
 
 
@@ -194,25 +195,24 @@ class LookupEvent(Lookup, dict):
         else:
             raise ValueError
 
+        if isinstance(start_time, str):
+            start_time = parse_time(start_time)
+
         test_status = self.get("status") and event.get("status")
-        test_season = bool(lookupseason) and bool(chainseason)
+        test_season = False  # bool(lookupseason) and bool(chainseason)
         test_start_time = self.get("start_time") and event.get("start_time")
 
-        if event_group_id:
-            parts = event_group_id.split(".")
-            assert len(parts) == 3,\
-                "{} is a strange sport object id".format(event_group_id)
-            if int(parts[0]) == 0:
-                event_group_id = ""
+        test_event_group_id = event_group_id and event_group_id[0] == "1"
 
-        if (all([a in chainsnames for a in lookupnames]) and
-                all([b in lookupnames for b in chainsnames]) and
-                (not test_season or  # only test if a season is provided
-                    all([b in lookupseason for b in chainseason]) and
-                    all([b in chainseason for b in lookupseason])) and
-                (not event_group_id or self.parent_id == event_group_id) and
-                (not test_status or status == self.get("status")) and
-                (not test_start_time or start_time == self.get("start_time"))
+        if (
+            all([a in chainsnames for a in lookupnames]) and
+            all([b in lookupnames for b in chainsnames]) and
+            (not test_season or  # only test if a season is provided
+                all([b in lookupseason for b in chainseason]) and
+                all([b in chainseason for b in lookupseason])) and
+            (not test_event_group_id or self.parent_id == event_group_id) and
+            (not test_status or status == self.get("status")) and
+            (not test_start_time or start_time == self.get("start_time"))
         ):
             return True
 
