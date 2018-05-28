@@ -16,19 +16,20 @@ from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
-from peerplays.utils import parse_time
-from peerplays.utils import formatTime
+from peerplays.utils import parse_time, formatTime
 
 parent_id = "1.17.16"
 this_id = "1.18.0"
+
+start_time = parse_time(formatTime(datetime.datetime.utcnow()))
 
 miniumum_event_dict = {
     "id": this_id,
     "teams": ["Demo", "Foobar"],
     "eventgroup_identifier": "NFL#PreSeas",
     "sport_identifier": "AmericanFootball",
-    "season": {"en": "2017-00-00"},
-    "start_time": datetime.datetime.utcnow(),
+    "season": {"en": "2017"},
+    "start_time": start_time,
     "status": "ongoing",
 }
 test_operation_dicts = [
@@ -36,8 +37,8 @@ test_operation_dicts = [
         "id": this_id,
         "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
         "event_group_id": parent_id,
-        "season": [["en", "2017-00-00"]],
-        "start_time": formatTime(miniumum_event_dict["start_time"])
+        "season": [["en", "2017"]],
+        "start_time": formatTime(start_time)
     }
 ]
 additional_objects = dict()
@@ -166,7 +167,7 @@ class Testcases(unittest.TestCase):
             "eventgroup_identifier": "NFL#PreSeas",
             "sport_identifier": "AmericanFootball",
             "season": {"en": "2017-00-00"},
-            "start_time": datetime.datetime.utcnow()
+            "start_time": start_time
         }), LookupEvent)
 
         with self.assertRaises(ValueError):
@@ -184,7 +185,7 @@ class Testcases(unittest.TestCase):
                 "eventgroup_identifier": "NFL#PreSeas",
                 "sport_identifier": "AmericanFootball",
                 "season": {"en": "2017-00-00"},
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
@@ -192,7 +193,7 @@ class Testcases(unittest.TestCase):
                 "eventgroup_identifier": "NFL#PreSeas",
                 "sport_identifier": "AmericanFootball",
                 "season": {"en": "2017-00-00"},
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
@@ -200,7 +201,7 @@ class Testcases(unittest.TestCase):
                 "teams": ["Demo", "Foobar"],
                 "sport_identifier": "AmericanFootball",
                 "season": {"en": "2017-00-00"},
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
@@ -208,7 +209,7 @@ class Testcases(unittest.TestCase):
                 "teams": ["Demo", "Foobar"],
                 "eventgroup_identifier": "NFL#PreSeas",
                 "season": {"en": "2017-00-00"},
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
@@ -216,7 +217,7 @@ class Testcases(unittest.TestCase):
                 "teams": ["Demo", "Foobar"],
                 "eventgroup_identifier": "NFL#PreSeas",
                 "sport_identifier": "AmericanFootball",
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             }), LookupEvent)
 
         self.assertIsInstance(self.lookup["teams"], list)
@@ -228,7 +229,7 @@ class Testcases(unittest.TestCase):
             sport_identifier=miniumum_event_dict["sport_identifier"],
             eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
             teams=miniumum_event_dict["teams"],
-            start_time=miniumum_event_dict["start_time"]
+            start_time=start_time
         )
         self.assertTrue(event)
         self.assertEqual(event["id"], "1.18.0")
@@ -240,7 +241,7 @@ class Testcases(unittest.TestCase):
                 "eventgroup_identifier": "NFL#PreSeas",
                 "sport_identifier": "AmericanFootball",
                 "season": {"en": "2017-00-00"},
-                "start_time": datetime.datetime.utcnow()
+                "start_time": start_time
             })
 
         LookupEvent(**{
@@ -248,7 +249,7 @@ class Testcases(unittest.TestCase):
             "eventgroup_identifier": "NFL#PreSeas",
             "sport_identifier": "AmericanFootball",
             "season": {"en": "2017-00-00"},
-            "start_time": datetime.datetime.utcnow()
+            "start_time": start_time
         })
 
     def test_leadtimemax_close(self):
