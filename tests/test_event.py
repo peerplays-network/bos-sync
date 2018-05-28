@@ -16,8 +16,7 @@ from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
-from peerplays.utils import parse_time
-from peerplays.utils import formatTime
+from peerplays.utils import parse_time, formatTime
 
 parent_id = "1.17.16"
 this_id = "1.18.0"

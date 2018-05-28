@@ -17,9 +17,12 @@ from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 from bookied_sync.eventstatus import LookupEventStatus
 from bookied_sync.rule import LookupRules
+from peerplays.utils import parse_time, formatTime
 
 parent_id = "1.17.16"
 this_id = "1.18.0"
+
+start_time = parse_time(formatTime(datetime.datetime.utcnow()))
 
 miniumum_event_dict = {
     "id": this_id,
@@ -27,7 +30,7 @@ miniumum_event_dict = {
     "eventgroup_identifier": "NFL#PreSeas",
     "sport_identifier": "AmericanFootball",
     "season": {"en": "2017-00-00"},
-    "start_time": datetime.datetime.utcnow(),
+    "start_time": start_time,
 }
 test_result = [2, 3]
 additional_objects = dict()

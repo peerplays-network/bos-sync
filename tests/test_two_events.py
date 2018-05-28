@@ -22,13 +22,15 @@ from peerplays.utils import formatTime
 parent_id = "1.17.16"
 this_id = "1.18.0"
 
+start_time = parse_time("2018-05-30T02:05:00")
+
 miniumum_event_dict = {
     "id": "1.18.0",
     "teams": ["Demo", "Foobar"],
     "eventgroup_identifier": "NFL#PreSeas",
     "sport_identifier": "AmericanFootball",
     "season": {"en": "2017-00-00"},
-    "start_time": parse_time("2018-05-30T02:05:00"),
+    "start_time": start_time,
     "status": "upcoming",
 }
 test_operation_dicts = [
@@ -37,7 +39,7 @@ test_operation_dicts = [
         "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
         "event_group_id": parent_id,
         "season": [["en", "2017-00-00"]],
-        "start_time": miniumum_event_dict["start_time"]
+        "start_time": start_time
     }
 ]
 additional_objects = dict()
@@ -83,10 +85,12 @@ class Testcases(unittest.TestCase):
         t["start_time"] = parse_time("2018-05-31T02:05:00")
         self.assertFalse(self.lookup.test_operation_equal(t))
 
+        """
         # The second event is identical but has a different season
         t = test_operation_dicts[0].copy()
         t["season"] = [["en", "2018"]]
         self.assertFalse(self.lookup.test_operation_equal(t))
+        """
 
         # The second event is identical but has a different event group
         t = test_operation_dicts[0].copy()
