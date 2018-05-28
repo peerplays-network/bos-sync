@@ -22,6 +22,7 @@ parent_id = "1.17.16"
 this_id = "1.18.0"
 
 start_time = parse_time(formatTime(datetime.datetime.utcnow()))
+start_time_2 = parse_time("2020-05-28T15:14:26")
 
 miniumum_event_dict = {
     "id": this_id,
@@ -39,6 +40,12 @@ test_operation_dicts = [
         "event_group_id": parent_id,
         "season": [["en", "2017"]],
         "start_time": formatTime(start_time)
+    }, {
+        "id": "1.18.1",
+        "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
+        "event_group_id": parent_id,
+        "season": [["en", "2017"]],
+        "start_time": formatTime(start_time_2)
     }
 ]
 additional_objects = dict()
@@ -257,7 +264,7 @@ class Testcases(unittest.TestCase):
             sport_identifier=miniumum_event_dict["sport_identifier"],
             eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
             teams=miniumum_event_dict["teams"],
-            start_time=miniumum_event_dict["start_time"]
+            start_time=start_time_2
         )
         LookupEventGroup.start_datetime = PropertyMock(
             return_value=datetime.datetime.utcnow() + datetime.timedelta(days=3)
@@ -267,18 +274,6 @@ class Testcases(unittest.TestCase):
         )
         LookupEventGroup.leadtime_Max = PropertyMock(return_value=2)
         self.assertFalse(event.can_open)
-
-        self.assertTrue(
-            event.can_open_by < (
-                datetime.datetime.utcnow() +
-                datetime.timedelta(days=3) -
-                datetime.timedelta(days=1.9)
-            ) and
-            event.can_open_by > (
-                datetime.datetime.utcnow() +
-                datetime.timedelta(days=3) -
-                datetime.timedelta(days=2.1)
-            ))
 
     def test_leadtimemax_open(self):
         event = LookupEvent.find_event(

@@ -359,14 +359,10 @@ class LookupEvent(Lookup, dict):
         """ Only update if after leadtime
         """
         # Return True in case any of the parameters are not provided
-        if (
-            not self.event_group_start_datetime or
-            not self.event_group_finish_datetime or
-            not self.eventgroup.leadtime_Max
-        ):
+        if not self.eventgroup.leadtime_Max:
             return True
-
-        return datetime.utcnow() > self.can_open_by
+        else:
+            return datetime.utcnow() >= self.can_open_by
 
     @property
     def can_open_by(self):
@@ -374,10 +370,5 @@ class LookupEvent(Lookup, dict):
             leadtime_Max
         """
         evg = self.eventgroup
-        start_date = evg.start_datetime
-        if not evg.leadtime_Max and start_date:
-            return start_date
-        elif not start_date:
-            return datetime.utcnow() - timedelta(minutes=1)
-        else:
-            return (start_date - timedelta(days=evg.leadtime_Max))
+        start_time = self.get("start_time", datetime.utcnow())
+        return (start_time - timedelta(days=evg.leadtime_Max))
