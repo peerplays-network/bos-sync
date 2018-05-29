@@ -233,11 +233,16 @@ class LookupEvent(Lookup, dict):
             self.parent_id,
             peerplays_instance=self.peerplays)
 
-        # FIXME: Might be we also need to look for season
         en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+        start_time = self.get("start_time")
+        event_group_id = self.get("event_group_id")
 
         for event in events:
-            if en_descrp in event["name"]:
+            if (
+                en_descrp in event["name"] and
+                formatTime(start_time) == event["start_time"] and
+                event_group_id == event["event_group_id"]
+            ):
                 return event["id"]
 
     def is_synced(self):

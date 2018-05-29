@@ -22,6 +22,7 @@ parent_id = "1.17.16"
 this_id = "1.18.0"
 
 start_time = parse_time(formatTime(datetime.datetime.utcnow()))
+start_time_tomorrow = parse_time(formatTime(datetime.datetime.utcnow() + datetime.timedelta(days=1)))
 
 miniumum_event_dict = {
     "id": this_id,
@@ -34,6 +35,12 @@ miniumum_event_dict = {
 }
 test_operation_dicts = [
     {
+        "id": "1.18.1",
+        "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
+        "event_group_id": parent_id,
+        "season": [["en", "2017"]],
+        "start_time": formatTime(start_time_tomorrow)
+    }, {
         "id": this_id,
         "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
         "event_group_id": parent_id,
@@ -87,7 +94,6 @@ class Testcases(unittest.TestCase):
     def setupCache(self):
         _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
         _cache[parent_id] = {"id": parent_id}
-        #_cache[test_operation_dicts["id"]] = test_operation_dicts
         for i in test_operation_dicts:
             _cache[i["id"]] = i
         for _, j in additional_objects.items():
@@ -117,8 +123,8 @@ class Testcases(unittest.TestCase):
         )
 
     def test_test_operation_equal(self):
-        for x in test_operation_dicts:
-            self.assertTrue(self.lookup.test_operation_equal(x))
+        self.assertFalse(self.lookup.test_operation_equal(test_operation_dicts[0]))
+        self.assertTrue(self.lookup.test_operation_equal(test_operation_dicts[1]))
 
         with self.assertRaises(ValueError):
             self.assertTrue(self.lookup.test_operation_equal({}))
