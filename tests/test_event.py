@@ -22,7 +22,6 @@ parent_id = "1.17.16"
 this_id = "1.18.0"
 
 start_time = parse_time(formatTime(datetime.datetime.utcnow()))
-start_time_2 = parse_time("2020-05-28T15:14:26")
 
 miniumum_event_dict = {
     "id": this_id,
@@ -40,12 +39,6 @@ test_operation_dicts = [
         "event_group_id": parent_id,
         "season": [["en", "2017"]],
         "start_time": formatTime(start_time)
-    }, {
-        "id": "1.18.1",
-        "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
-        "event_group_id": parent_id,
-        "season": [["en", "2017"]],
-        "start_time": formatTime(start_time_2)
     }
 ]
 additional_objects = dict()
@@ -260,36 +253,28 @@ class Testcases(unittest.TestCase):
         })
 
     def test_leadtimemax_close(self):
-        event = LookupEvent.find_event(
+        event = LookupEvent(
             sport_identifier=miniumum_event_dict["sport_identifier"],
             eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
             teams=miniumum_event_dict["teams"],
-            start_time=start_time_2
+            start_time=parse_time("2020-05-28T15:14:26")
         )
-        LookupEventGroup.start_datetime = PropertyMock(
-            return_value=datetime.datetime.utcnow() + datetime.timedelta(days=3)
-        )
-        LookupEventGroup.finish_datetime = PropertyMock(
-            return_value=datetime.datetime.utcnow() + datetime.timedelta(days=14)
-        )
-        LookupEventGroup.leadtime_Max = PropertyMock(return_value=2)
+        # We set the leadtime_max to 2 days
+        leadtime_Max = event.eventgroup["leadtime_Max"]
         self.assertFalse(event.can_open)
 
-    def test_leadtimemax_open(self):
-        event = LookupEvent.find_event(
-            sport_identifier=miniumum_event_dict["sport_identifier"],
-            eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
-            teams=miniumum_event_dict["teams"],
-            start_time=miniumum_event_dict["start_time"]
-        )
-        LookupEventGroup.start_datetime = PropertyMock(
-            return_value=datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        )
-        LookupEventGroup.finish_datetime = PropertyMock(
-            return_value=datetime.datetime.utcnow() + datetime.timedelta(days=14)
-        )
-        LookupEventGroup.leadtime_Max = PropertyMock(return_value=2)
+        # If the event starts now, it should be allowed to open
+        event["start_time"] = datetime.datetime.utcnow()
         self.assertTrue(event.can_open)
+
+        # If we move the start time forward to leadtime_max-1minute, it should
+        # stil open
+        event["start_time"] = datetime.datetime.utcnow() + datetime.timedelta(days=leadtime_Max, minutes=-1)
+        self.assertTrue(event.can_open)
+
+        # If we move it further, it should fail to open
+        event["start_time"] = datetime.datetime.utcnow() + datetime.timedelta(days=leadtime_Max, minutes=1)
+        self.assertFalse(event.can_open)
 
     def test_approve_proposal(self):
         # We need an approver account
