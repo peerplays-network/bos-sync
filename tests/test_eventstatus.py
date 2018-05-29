@@ -31,6 +31,7 @@ miniumum_event_dict = {
     "sport_identifier": "AmericanFootball",
     "season": {"en": "2017-00-00"},
     "start_time": start_time,
+    "status": "upcoming",
 }
 test_result = [2, 3]
 additional_objects = dict()

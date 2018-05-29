@@ -39,12 +39,14 @@ test_operation_dicts = [
         "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
         "event_group_id": parent_id,
         "season": [["en", "2017"]],
+        "status": "ongoing",
         "start_time": formatTime(start_time_tomorrow)
     }, {
         "id": this_id,
         "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
         "event_group_id": parent_id,
         "season": [["en", "2017"]],
+        "status": "ongoing",
         "start_time": formatTime(start_time)
     }
 ]
