@@ -115,7 +115,6 @@ class Testcases(unittest.TestCase):
                            'required_owner_approvals': []}]
         Proposals.cache = cache
 
-        logging.info("Updating ....")
         self.lookup.update()
 
         # this is supposed to be an update of the proposal 1.10.336

@@ -233,11 +233,16 @@ class LookupEvent(Lookup, dict):
             self.parent_id,
             peerplays_instance=self.peerplays)
 
-        # FIXME: Might be we also need to look for season
         en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+        start_time = self.get("start_time")
+        event_group_id = self.get("event_group_id")
 
         for event in events:
-            if en_descrp in event["name"]:
+            if (
+                en_descrp in event["name"] and
+                formatTime(start_time) == event["start_time"] and
+                event_group_id == event["event_group_id"]
+            ):
                 return event["id"]
 
     def is_synced(self):
@@ -359,14 +364,10 @@ class LookupEvent(Lookup, dict):
         """ Only update if after leadtime
         """
         # Return True in case any of the parameters are not provided
-        if (
-            not self.event_group_start_datetime or
-            not self.event_group_finish_datetime or
-            not self.eventgroup.leadtime_Max
-        ):
+        if not self.eventgroup.leadtime_Max:
             return True
-
-        return datetime.utcnow() > self.can_open_by
+        else:
+            return datetime.utcnow() >= self.can_open_by
 
     @property
     def can_open_by(self):
@@ -374,10 +375,5 @@ class LookupEvent(Lookup, dict):
             leadtime_Max
         """
         evg = self.eventgroup
-        start_date = evg.start_datetime
-        if not evg.leadtime_Max and start_date:
-            return start_date
-        elif not start_date:
-            return datetime.utcnow() - timedelta(minutes=1)
-        else:
-            return (start_date - timedelta(days=evg.leadtime_Max))
+        start_time = self.get("start_time", datetime.utcnow())
+        return (start_time - timedelta(days=evg.leadtime_Max))
