@@ -180,3 +180,7 @@ class LookupEventGroup(Lookup, dict):
     @property
     def leadtime_Max(self):
         return self.get("leadtime_Max")
+
+    @property
+    def sport_id(self):
+        return self.parent.id

@@ -17,80 +17,27 @@ from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.utils import parse_time
 
-parent_id = "1.18.0"
-this_id = "1.19.0"
-test_operation_dicts = [
-    {
-        "id": this_id,
-        "name": [["en", "R_NFL_MO_1"], ["de", "R_NFL_MO_1"]],
-        "description": [
-            ["en", "Foobar"],
-            ["de", "Fuubar"],
-            ['grading', '{"metric": "{result.hometeam} - {result.awayteam}", "resolutions": [{"not_win": "{metric} <= 0", "void": "False", "win": "{metric} > 0"}, {"not_win": "{metric} >= 0", "void": "False", "win": "{metric} < 0"}, {"not_win": "{metric} != 0", "void": "False", "win": "{metric} == 0"}]}']
-        ]
-    }
-]
-additional_objects = dict()
-additional_objects["rules"] = [
-    {
-     'name': [
-         ['en', 'R_NFL_MO_1'],
-     ],
-     'id': '1.19.0',
-     'description': [
-         ['en', 'R_NFL_MO_1'],
-         ['de', 'R_NFL_MO_1'],
-         ['grading', str({
-             'metric': '{result.hometeam} - {result.awayteam}',
-             'resolutions': [{'win': '{metric} > 0',
-                              'not_win': '{metric} <= 0',
-                              'void': 'False'},
-                             {'win': '{metric} < 0',
-                              'not_win': '{metric} >= 0',
-                              'void': 'False'},
-                             {'win': '{metric} == 0',
-                              'not_win': '{metric} != 0',
-                              'void': 'False'}]})
-         ]
-     ]}
-]
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
+from .fixtures import fixture_data, config, lookup_test_event
 
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
+rule_id = "1.19.12"
+test_operation_dicts = [
+    {"name": [["en", "R_NBA_OU_1"],
+              ["identifier", "R_NBA_OU_1"]],
+     "id": rule_id,
+     "description": [["en", "Foobar"],
+                     ["grading", '{"metric": "{result.hometeam} - {result.awayteam}", "resolutions": [{"not_win": "{metric} <= 0", "void": "False", "win": "{metric} > 0"}, {"not_win": "{metric} >= 0", "void": "False", "win": "{metric} < 0"}, {"not_win": "{metric} != 0", "void": "False", "win": "{metric} == 0"}]}']]}
+]
 
 
 class Testcases(unittest.TestCase):
 
+    def setUp(self):
+        fixture_data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.lookup = LookupRules("AmericanFootball", "R_NFL_MO_1")
-
-        self.setupCache()
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        _cache[parent_id] = {"id": parent_id}
-        for i in test_operation_dicts:
-            _cache[i["id"]] = i
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
-        Rules.cache["rules"] = test_operation_dicts
+        fixture_data()
+        self.lookup = LookupRules("Basketball", "R_NBA_OU_1")
 
     def test_test_operation_equal(self):
         for x in test_operation_dicts:
@@ -100,10 +47,10 @@ class Testcases(unittest.TestCase):
             self.assertTrue(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
-        self.assertEqual(self.lookup.find_id(), this_id)
+        self.assertEqual(self.lookup.find_id(), rule_id)
 
     def test_is_synced(self):
-        self.lookup["id"] = this_id
+        self.lookup["id"] = rule_id
         self.assertTrue(self.lookup.is_synced())
 
     def test_propose_new(self):
@@ -123,7 +70,7 @@ class Testcases(unittest.TestCase):
     def test_propose_update(self):
         from peerplaysbase.operationids import operations
 
-        self.lookup["id"] = this_id
+        self.lookup["id"] = rule_id
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_update()
         tx = tx.json()

@@ -15,82 +15,48 @@ from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarket import LookupBettingMarket
 from peerplays.utils import parse_time
 
+from .fixtures import fixture_data, config, lookup_test_event
 
-parent_id = "1.20.0"
-this_id = "1.21.0"
-miniumum_event_dict = {
-    "id": "1.18.0",
-    "teams": ["Demo", "Foobar"],
-    "eventgroup_identifier": "NFL#PreSeas",
-    "sport_identifier": "AmericanFootball",
-    "season": {"en": "2017-00-00"},
-    "start_time": datetime.datetime.utcnow(),
-    "status": "ongoing",
+
+event_id = "1.18.2242"
+bmg_id = "1.20.212"
+bm_id = "1.21.2950"
+test_operation_dict = {
+    "id": bm_id,
+    "description": [["en", "Boston Celtics"]],
+    "group_id": bmg_id,
 }
-test_operation_dicts = [
-    {
-        "id": this_id,
-        "description": [["en", "Demo wins"]],
-        "group_id": parent_id,
-    }
-]
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
 
 
 class Testcases(unittest.TestCase):
 
+    def setUp(self):
+        fixture_data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        fixture_data()
 
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-
-        self.setupCache()
-
-        event = LookupEvent(**miniumum_event_dict)
+        event = lookup_test_event(event_id)
         bmg = next(event.bettingmarketgroups)
         # overwrite the BMG id since we cannot look on the chain
-        bmg["id"] = parent_id
+        bmg["id"] = bmg_id
         self.lookup = next(bmg.bettingmarkets)
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        _cache[parent_id] = {"id": parent_id}
-        _cache[miniumum_event_dict["id"]] = miniumum_event_dict
-        for i in test_operation_dicts:
-            _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
-
-        BettingMarkets.cache[parent_id] = test_operation_dicts
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupBettingMarket)
 
     def test_test_operation_equal(self):
-        for x in test_operation_dicts:
-            self.assertTrue(self.lookup.test_operation_equal(x))
+        self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
         with self.assertRaises(ValueError):
             self.assertTrue(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
-        self.assertEqual(self.lookup.find_id(), this_id)
+        self.assertEqual(self.lookup.find_id(), bm_id)
 
     def test_is_synced(self):
-        self.lookup["id"] = this_id
+        self.lookup["id"] = bm_id
         self.assertTrue(self.lookup.is_synced())
 
     def test_propose_new(self):
@@ -110,7 +76,7 @@ class Testcases(unittest.TestCase):
     def test_propose_update(self):
         from peerplaysbase.operationids import operations
 
-        self.lookup["id"] = this_id
+        self.lookup["id"] = bm_id
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_update()
         tx = tx.json()

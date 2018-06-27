@@ -377,3 +377,7 @@ class LookupEvent(Lookup, dict):
         evg = self.eventgroup
         start_time = self.get("start_time", datetime.utcnow())
         return (start_time - timedelta(days=evg.leadtime_Max))
+
+    @property
+    def event_group_id(self):
+        return self.parent.id

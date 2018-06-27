@@ -9,59 +9,29 @@ from peerplaysbase.operationids import operations
 from peerplays.blockchainobject import BlockchainObject, ObjectCache
 from peerplays.instance import set_shared_blockchain_instance
 
+from .fixtures import fixture_data, config, lookup_test_event
+
 import logging
 # logging.basicConfig(level=logging.INFO)
-
-this_id = "1.16.0"
-
-test_operation_dicts = [
-    {
-        "name": [["en", "American Football (Unittest)"],
-                 ["de", "Amerikanisches Football (Unittest)"],
-                 ['identifier', 'AmericanFootball (Unittest)']],
-    }
-]
-additional_objects = dict()
-
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
 
 
 class Testcases(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.lookup = LookupSport("AmericanFootball")
-        self.lookup.set_approving_account("init0")
-        self.setupCache()
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
-
     def setUp(self):
         self.lookup.clear_proposal_buffer()
         self.lookup.clear_direct_buffer()
+        fixture_data()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        fixture_data()
+        self.lookup = LookupSport("AmericanFootball")
+        self.lookup.set_approving_account("init0")
 
     def test_search_pending_props(self):
+        # As defined in bookiesports
+        self.assertEqual(self.lookup.id, "1.16.0")
+
         # Proposal creation
         self.lookup.propose_new()
 

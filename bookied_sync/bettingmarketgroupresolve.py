@@ -8,6 +8,9 @@ from peerplays.rule import Rule
 
 class LookupBettingMarketGroupResolve(Lookup, dict):
     """ Lookup Class for Resolving BettingMarketGroups
+
+        ... note:: If ``result`` is a dictionary, then first element is
+            ``homeTeam`` and second is ``awayTeam``.
     """
 
     operation_update = None
@@ -128,7 +131,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             # {'win': False, 'not_win': True, 'void': False}
             # we now need to ensure that only one of those options is 'true'
             assert sum(resolved.values()) == 1, \
-                "Multiple options resolved to 'True': {}".format(
+                "Multiple or no options resolved to 'True': {}".format(
                     str(resolved))
 
             ret.extend([

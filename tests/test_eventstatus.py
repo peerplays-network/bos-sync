@@ -19,59 +19,22 @@ from bookied_sync.eventstatus import LookupEventStatus
 from bookied_sync.rule import LookupRules
 from peerplays.utils import parse_time, formatTime
 
-parent_id = "1.17.16"
-this_id = "1.18.0"
+from .fixtures import fixture_data, config, lookup_test_event
 
-start_time = parse_time(formatTime(datetime.datetime.utcnow()))
-
-miniumum_event_dict = {
-    "id": this_id,
-    "teams": ["Demo", "Foobar"],
-    "eventgroup_identifier": "NFL#PreSeas",
-    "sport_identifier": "AmericanFootball",
-    "season": {"en": "2017-00-00"},
-    "start_time": start_time,
-    "status": "upcoming",
-}
-test_result = [2, 3]
-additional_objects = dict()
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
+event_group_id = "1.17.16"
+event_id = "1.18.0"
 
 
 class Testcases(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.setupCache()
-        self.lookup = LookupEvent(**miniumum_event_dict)
-
     def setUp(self):
+        fixture_data()
         self.lookup.clear_proposal_buffer()
 
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        _cache[parent_id] = {"id": parent_id}
-        _cache[this_id] = miniumum_event_dict
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        fixture_data()
+        self.lookup = lookup_test_event(event_id)
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupEvent)
