@@ -22,6 +22,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         bmg,
         result,
         handicaps=None,
+        overunder=None,
         extra_data={}
     ):
         Lookup.__init__(self)
@@ -35,7 +36,12 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         assert isinstance(result, list) and len(result) == 2, \
             "Result must be a list of length 2."
         handicaps = handicaps or [0, 0]
-        dict.update(self, dict(result=result, handicaps=handicaps))
+        overunder = overunder or 0
+        dict.update(self, dict(
+            result=result,
+            handicaps=handicaps,
+            overunder=overunder
+        ))
 
     @property
     def bmg(self):
@@ -74,7 +80,8 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         return substitute_metric(
             self.grading.get("metric", ""),
             result=self["result"],
-            handicaps=self["handicaps"]
+            handicaps=self["handicaps"],
+            overunder=self["overunder"]
         )
 
     @property

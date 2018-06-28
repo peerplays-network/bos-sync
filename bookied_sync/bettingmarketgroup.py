@@ -196,7 +196,8 @@ class LookupBettingMarketGroup(Lookup, dict):
             description = substitute_bettingmarket_name(
                 market["description"],
                 teams=self.event["teams"],
-                handicaps=self.get("handicaps")
+                handicaps=self.get("handicaps"),
+                overunder=self.get("overunder")
             )
 
             # Yield one Lookup per betting market
@@ -222,7 +223,8 @@ class LookupBettingMarketGroup(Lookup, dict):
         description = substitute_bettingmarket_name(
             self["description"],
             teams=self.event["teams"],
-            handicaps=self.get("handicaps")
+            handicaps=self.get("handicaps"),
+            overunder=self.get("overunder")
         )
         return [
             [
@@ -230,6 +232,9 @@ class LookupBettingMarketGroup(Lookup, dict):
                 v
             ] for k, v in description.items()
         ]
+
+    def set_overunder(self, ou):
+        self["overunder"] = ou
 
     def set_handicaps(self, home=None, away=None):
         if away and not home:
