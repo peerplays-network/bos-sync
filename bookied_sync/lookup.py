@@ -374,11 +374,18 @@ class Lookup(dict, BlockchainInstance):
                     log.info("Approving proposal {} by {}".format(
                         p, account["name"]))
                     approved_read_for_delete.append(p)
-                    log.info(self.peerplays.approveproposal(
-                        p,
-                        account=self.approving_account,
-                        append_to=Lookup.direct_buffer
-                    ))
+                    try:
+                        log.info(self.peerplays.approveproposal(
+                            p,
+                            account=self.approving_account,
+                            append_to=Lookup.direct_buffer
+                        ))
+                    except Exception as e:
+                        log.debug("Proposal Exception: {}".format(str(e)))
+                        # Not raising as at this point, the only reason for
+                        # this to fail is (probably) for the proposal to be
+                        # approved already - in the meantime.
+                        pass
                 else:
                     log.info(
                         "Proposal {} has already been approved by {}".format(
