@@ -96,7 +96,7 @@ class LookupEventGroup(Lookup, dict):
         egs = EventGroups(
             self.parent.id,
             peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+        en_descrp = next(filter(lambda x: x[0] == "identifier", self.names))
 
         for eg in egs:
             if (

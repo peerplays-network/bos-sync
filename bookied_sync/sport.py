@@ -107,7 +107,7 @@ class LookupSport(Lookup, dict):
                        **ENGLISH**!
         """
         sports = Sports(peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+        en_descrp = next(filter(lambda x: x[0] == "identifier", self.names))
         for sport in sports:
             if en_descrp in sport["name"]:
                 return sport["id"]
