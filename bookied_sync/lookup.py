@@ -532,6 +532,24 @@ class Lookup(dict, BlockchainInstance):
                     r.update()
         return self
 
+    def valid_object_id(self, id, fetch=None):
+        """ This method returns True or False depending on whether a object id
+            is valid and exists or not.
+
+            :param str id: object id
+            :param Object fetch: Fetch object from chain to test existence
+
+            If fetch fails, exception is raised.
+
+            ... note:: The object id must *not* be a proposal (1.10.x)
+        """
+        test = (id and id[0] == "1" and id[:4] != "1.10")
+        if test and fetch:
+            fetch(id)
+        return test
+
+
+
     # Prototypes #############################################################
     def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain

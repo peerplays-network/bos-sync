@@ -107,15 +107,8 @@ class LookupBettingMarketGroup(Lookup, dict):
         status = bmg.get("status")
 
         # Test if Rules and Events exist
-        # only if the id starts with 1.
-        test_rule = rules_id and rules_id[0] == "1"
-        if test_rule:
-            Rule(rules_id)
-
-        test_event = event_id and event_id[0] == "1"
-        if test_event:
-            Event(event_id)
-
+        test_rule = self.valid_object_id(rules_id, Rule)
+        test_event = self.valid_object_id(event_id, Event)
         test_status = bool(self.get("status"))
 
         """ We need to properly deal with the fact that betting market groups
@@ -152,7 +145,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         bmgs = BettingMarketGroups(

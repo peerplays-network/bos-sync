@@ -73,15 +73,11 @@ class LookupEventGroup(Lookup, dict):
         else:
             raise ValueError
 
-        parts = sport_id.split(".")
-        assert len(parts) == 3,\
-            "{} is a strange sport object id".format(sport_id)
-        if int(parts[0]) == 0:
-            sport_id = ""
+        test_sport = self.valid_object_id(sport_id)
 
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames]) and
-                (not sport_id or self.parent.id == sport_id)):
+                (not test_sport or self.parent.id == sport_id)):
             return True
 
     def find_id(self):
@@ -94,7 +90,7 @@ class LookupEventGroup(Lookup, dict):
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         egs = EventGroups(

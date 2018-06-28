@@ -75,7 +75,8 @@ class LookupBettingMarket(Lookup, dict):
         chainsdescr = bmg[prefix + "description"]
         group_id = bmg[prefix + "group_id"]
 
-        test_group = group_id and group_id[0] == "1"
+        # Test if group exists
+        test_group = self.valid_object_id(group_id)
 
         """ We need to properly deal with the fact that betting markets
             cannot be distinguished alone from the payload if they are bundled
@@ -89,9 +90,11 @@ class LookupBettingMarket(Lookup, dict):
                 if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
                     return False
 
-        if (all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr]) and
-                (not test_group or group_id == self.group.id)):
+        if (
+            all([a in chainsdescr for a in lookupdescr]) and
+            all([b in lookupdescr for b in chainsdescr]) and
+            (not test_group or group_id == self.group.id)
+        ):
             return True
         return False
 
@@ -105,7 +108,7 @@ class LookupBettingMarket(Lookup, dict):
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         bms = BettingMarkets(

@@ -151,10 +151,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         bmg_id = resolve["betting_market_group_id"]
 
         # Test if BMG exists
-        # only if the id starts with 1.
-        test_bmg = bmg_id[0] == 1
-        if test_bmg:
-            BettingMarketGroup(bmg_id)
+        test_bmg = self.valid_object_id(bmg_id, BettingMarketGroup)
 
         if (
             all([a in chainsresults for a in lookupresults]) and
