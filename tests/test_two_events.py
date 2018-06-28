@@ -28,7 +28,9 @@ start_time = parse_time("2018-05-30T02:05:00")
 
 test_operation_dict = {
     "id": event_id,
-    "name": [['en', 'Boston Celtics @ Atlanta Hawks']],
+    "name": [
+        ['en', 'Boston Celtics @ Atlanta Hawks']
+    ],
     "event_group_id": event_group_id,
     "season": [["en", "2017"]],
     "status": "upcoming",

@@ -30,6 +30,8 @@ events:
  - id: "1.18.2242"
    status: "upcoming"
    name: [['en', 'Boston Celtics @ Atlanta Hawks']]
+   # Home: Atlanta
+   # Away: Boston
    season: [["en", "2017"]]
    start_time: "2022-10-16T00:00:00"
    event_group_id: "1.17.12"
@@ -53,6 +55,72 @@ bettingmarketgroups:
    rules_id: '1.19.11'
    event_id: '1.18.2242'
 
+ - id: "1.20.213"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (0:1)']
+   - [en, 'Handicap (0:1)']
+   - [sen, 'Handicap (0:1)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
+ - id: "1.20.214"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (0:2)']
+   - [en, 'Handicap (0:2)']
+   - [sen, 'Handicap (0:2)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
+ - id: "1.20.215"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (2:0)']
+   - [en, 'Handicap (2:0)']
+   - [sen, 'Handicap (2:0)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
+ - id: "1.20.216"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (0:3)']
+   - [en, 'Handicap (0:3)']
+   - [sen, 'Handicap (2:0)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
+ - id: "1.20.217"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (0:2)']
+   - [en, 'Handicap (0:2)']
+   - [sen, 'Handicap (0:2)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
+ - id: "1.20.218"
+   asset_id: '1.3.0'
+   delay_before_settling: 0
+   description:
+   - [display_name, 'HC (3:0)']
+   - [en, 'Handicap (3:0)']
+   - [sen, 'Handicap (3:0)']
+   status: 'upcoming'
+   rules_id: '1.19.10'
+   event_id: '1.18.2242'
+
 bettingmarkets:
  - id: '1.21.2950'
    description: [['en', 'Boston Celtics']]
@@ -64,6 +132,85 @@ bettingmarkets:
    group_id: '1.20.212'
    status: 'unresolved'
 
+ ###################
+ - id: '1.21.2952'
+   description:
+    - ['en', 'Atlanta Hawks (1)']
+   group_id: '1.20.213'
+   status: 'unresolved'
+
+ - id: '1.21.2953'
+   description:
+    - ['en', 'Boston Celtics (-1)']
+   group_id: '1.20.213'
+   status: 'unresolved'
+ ###################
+
+ - id: '1.21.2954'
+   description:
+    - ['en', 'Atlanta Hawks (2)']
+   group_id: '1.20.214'
+   status: 'unresolved'
+
+ - id: '1.21.2955'
+   description:
+    - ['en', 'Boston Celtics (-2)']
+   group_id: '1.20.214'
+   status: 'unresolved'
+ ###################
+
+ - id: '1.21.2956'
+   description:
+    - ['en', 'Atlanta Hawks (-2)']
+   group_id: '1.20.215'
+   status: 'unresolved'
+
+ - id: '1.21.2957'
+   description:
+    - ['en', 'Boston Celtics (2)']
+   group_id: '1.20.215'
+   status: 'unresolved'
+ ###################
+
+ - id: '1.21.2958'
+   description:
+    - ['en', 'Atlanta Hawks (3)']
+   group_id: '1.20.216'
+   status: 'unresolved'
+
+ - id: '1.21.2959'
+   description:
+    - ['en', 'Boston Celtics (-3)']
+   group_id: '1.20.216'
+   status: 'unresolved'
+ ###################
+
+ - id: '1.21.2960'
+   description:
+    - ['en', 'Atlanta Hawks (-2)']
+   group_id: '1.20.217'
+   status: 'unresolved'
+
+ - id: '1.21.2961'
+   description:
+    - ['en', 'Boston Celtics (2)']
+   group_id: '1.20.217'
+   status: 'unresolved'
+ ###################
+
+ - id: '1.21.2962'
+   description:
+    - ['en', 'Atlanta Hawks (-3)']
+   group_id: '1.20.218'
+   status: 'unresolved'
+
+ - id: '1.21.2963'
+   description:
+    - ['en', 'Boston Celtics (3)']
+   group_id: '1.20.218'
+   status: 'unresolved'
+ ###################
+
 rules:
  - id: "1.19.10"
    name:
@@ -71,7 +218,7 @@ rules:
     - ["identifier", "R_NBA_HCP_1"]
    description:
     - ["en", "Foobar"]
-    - ["grading", '{"resolutions":[{"void":"False","not_win":"{metric} < 0","win":"{metric} > 0"},{"void":"False","not_win":"{metric} > 0","win":"{metric} < 0"}],"metric":"{result.awayteam} XXX - {result.hometeam} XXX"}%']
+    - ["grading", '{"resolutions":[{"void":"False","not_win":"{metric} <= 0","win":"{metric} > 0"},{"void":"False","not_win":"{metric} >= 0","win":"{metric} < 0"}],"metric":"({result.home} - {handicaps.home}) - ({result.away} - {handicaps.away})"}']
 
  - id: "1.19.11"
    name:

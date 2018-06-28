@@ -3,7 +3,44 @@ from .rule import LookupRules
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup
 )
+from peerplays.bettingmarket import BettingMarkets
 from peerplays.rule import Rule
+
+
+def substitute_metric(
+    scheme,
+    result,
+    teams=["", ""],
+    handicaps=[0, 0]
+):
+    class Result:
+        hometeam = result[0]
+        awayteam = result[1]
+        total = sum([float(x) for x in result])
+
+        # aliases
+        home = hometeam
+        away = awayteam
+
+    class Teams():
+        home = " ".join([
+            x.capitalize() for x in teams[0].split(" ")])
+        away = " ".join([
+            x.capitalize() for x in teams[1].split(" ")])
+
+    class Handicaps():
+        home = handicaps[0]
+        away = handicaps[1]
+
+        # The other team has the advantage in the 'score'
+        home_score = int(away) if int(away) >= 0 else 0
+        away_score = int(home) if int(home) >= 0 else 0
+
+    return scheme.format(
+        result=Result,
+        teams=Teams,
+        handicaps=Handicaps
+    )
 
 
 class LookupBettingMarketGroupResolve(Lookup, dict):
@@ -20,6 +57,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         self,
         bmg,
         result,
+        handicaps=None,
         extra_data={}
     ):
         Lookup.__init__(self)
@@ -28,15 +66,12 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         )
         self.parent = bmg
         dict.__init__(self, extra_data)
-        dict.update(
-            self,
-            bmg
-        )
+        dict.update(self, bmg)
+
         assert isinstance(result, list) and len(result) == 2, \
             "Result must be a list of length 2."
-        dict.update(self, {
-            "result": result
-        })
+        handicaps = handicaps or [0, 0]
+        dict.update(self, dict(result=result, handicaps=handicaps))
 
     @property
     def bmg(self):
@@ -65,8 +100,45 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
 
     @property
     def grading(self):
+        # We take the actual grading from the blockchain and not from
+        # the lookup!!
         rule = Rule(self.rules.id, peerplays_instance=self.peerplays)
         return rule.grading
+
+    @property
+    def _metric(self):
+        return substitute_metric(
+            self.grading.get("metric", ""),
+            result=self["result"],
+            handicaps=self["handicaps"]
+        )
+
+    @property
+    def metric(self):
+        s = self._metric
+        if not isinstance(s, str):
+            raise ValueError(
+                "metric must be string, was {}".format(
+                    type(s)))
+        try:
+            metric = eval(s)
+        except Exception:
+            raise Exception("Cannot evaluate metric '{}'".format(s))
+        return metric
+
+    def evaluate_metric(self, equation):
+        # Define variables we want to use when grading
+        if not isinstance(equation, str):
+            raise ValueError(
+                "equation must be string, was {}".format(
+                    type(equation)
+                ))
+        equation = equation.format(metric=self.metric)
+        try:
+            metric = eval(equation)
+        except Exception:
+            raise Exception("Cannot evaluate metric '{}'".format(equation))
+        return metric
 
     @property
     def resolutions(self):
@@ -82,50 +154,14 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                 ]
 
         """
-        # Define variables we want to use when grading
-        class Result:
-            hometeam = (self["result"][0])
-            awayteam = float(self["result"][1])
-            total = sum([float(x) for x in self["result"]])
-
-            # aliases
-            home = hometeam
-            away = awayteam
-
-        def return_metric(s):
-            if not isinstance(s, str):
-                raise ValueError(
-                    "metric must be string, was {}".format(
-                        type(s)
-                    ))
-            try:
-                metric = eval(s.format(result=Result))
-            except Exception:
-                raise Exception("Cannot evaluate metric '{}' -> '{}'".format(
-                    s, s.format(result=Result)))
-            return metric
-
-        def evaluate_metric(equation, metric):
-            if not isinstance(equation, str):
-                raise ValueError(
-                    "equation must be string, was {}".format(
-                        type(equation)
-                    ))
-            try:
-                metric = eval(equation.format(metric=metric))
-            except Exception:
-                raise Exception("Cannot evaluate metric '{}' -> '{}'".format(
-                    equation, equation.format(result=Result)))
-            return metric
-
-        metric = return_metric(self.grading.get("metric", ""))
         bettingmarkets = self.markets
         ret = []
         for market in self.grading.get("resolutions", []):
             bettingmarket = next(bettingmarkets)
+
             resolved = {
-                key: evaluate_metric(option, metric)
-                for key, option in market.items()
+                key: self.evaluate_metric(equation)
+                for key, equation in market.items()
             }
             # The resolved dictionary looks like this
             # {'win': False, 'not_win': True, 'void': False}

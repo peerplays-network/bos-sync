@@ -77,16 +77,6 @@ class Testcases(unittest.TestCase):
         ):
             self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
-    def test_find_id(self):
-        pass
-
-    def test_is_synced(self):
-        """ FIXME: We always return False because the blockchain doesn't tell
-            us yet if the bmgs have already been resolved.
-
-        """
-        return False
-
     def test_propose_new(self):
         from peerplaysbase.operationids import operations
         self.lookup.clear_proposal_buffer()
@@ -100,9 +90,6 @@ class Testcases(unittest.TestCase):
             tx["operations"][0][1]["proposed_ops"][0]["op"][0],
             operations[self.lookup.operation_create]
         )
-
-    def test_propose_update(self):
-        pass
 
     def test_resolution(self):
         # Away Team wins
@@ -184,4 +171,3 @@ class Testcases(unittest.TestCase):
             pending_propos[0]["pid"],
             self.lookup.approval_map
         )
-
