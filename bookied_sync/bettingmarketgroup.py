@@ -7,38 +7,7 @@ from peerplays.asset import Asset
 from peerplays.bettingmarketgroup import (
     BettingMarketGroups, BettingMarketGroup)
 from . import log
-
-
-def substitution(
-    scheme,
-    teams=["", ""],
-    handicaps=None
-):
-    if not handicaps:
-        handicaps = [0, 0]
-    class Teams():
-        home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
-        away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
-
-    class Handicaps():
-        home = handicaps[0]
-        away = handicaps[1]
-
-        # The other team has the advantage in the 'score'
-        home_score = away if away >= 0 else 0
-        away_score = home if home >= 0 else 0
-
-    ret = dict()
-    for lang, name in scheme.items():
-        if lang[0] == "_":
-            continue
-        ret[lang] = name.format(
-            teams=Teams(),
-            handicaps=Handicaps()
-        )
-    return ret
+from .substitutions import substitute_bettingmarket_name
 
 
 class LookupBettingMarketGroup(Lookup, dict):
@@ -224,7 +193,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         for market in self["bettingmarkets"]:
             bm_counter += 1
             # Overwrite the description with with proper replacement of variables
-            description = substitution(
+            description = substitute_bettingmarket_name(
                 market["description"],
                 teams=self.event["teams"],
                 handicaps=self.get("handicaps")
@@ -250,7 +219,7 @@ class LookupBettingMarketGroup(Lookup, dict):
     def description(self):
         """ Properly format description for internal use
         """
-        description = substitution(
+        description = substitute_bettingmarket_name(
             self["description"],
             teams=self.event["teams"],
             handicaps=self.get("handicaps")

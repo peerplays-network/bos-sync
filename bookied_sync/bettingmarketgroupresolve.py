@@ -3,44 +3,8 @@ from .rule import LookupRules
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup
 )
-from peerplays.bettingmarket import BettingMarkets
 from peerplays.rule import Rule
-
-
-def substitute_metric(
-    scheme,
-    result,
-    teams=["", ""],
-    handicaps=[0, 0]
-):
-    class Result:
-        hometeam = result[0]
-        awayteam = result[1]
-        total = sum([float(x) for x in result])
-
-        # aliases
-        home = hometeam
-        away = awayteam
-
-    class Teams():
-        home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
-        away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
-
-    class Handicaps():
-        home = handicaps[0]
-        away = handicaps[1]
-
-        # The other team has the advantage in the 'score'
-        home_score = int(away) if int(away) >= 0 else 0
-        away_score = int(home) if int(home) >= 0 else 0
-
-    return scheme.format(
-        result=Result,
-        teams=Teams,
-        handicaps=Handicaps
-    )
+from .substitutions import substitute_metric
 
 
 class LookupBettingMarketGroupResolve(Lookup, dict):
