@@ -226,6 +226,15 @@ class LookupBettingMarketGroup(Lookup, dict):
             handicaps=self.get("handicaps"),
             overunder=self.get("overunder")
         )
+        if self.get("handicaps"):
+            description["_dynamic"] = "hc"
+            description["_hch"] = str(self.get("handicaps")[0])
+            description["_hca"] = str(self.get("handicaps")[1])
+
+        if self.get("overunder"):
+            description["_dynamic"] = "ou"
+            description["_ou"] = str(self.get("overunder"))
+
         return [
             [
                 k,

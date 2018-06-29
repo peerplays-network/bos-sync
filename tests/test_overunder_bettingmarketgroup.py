@@ -22,16 +22,15 @@ from peerplays.utils import parse_time
 from .fixtures import fixture_data, config, lookup_test_event
 
 event_id = "1.18.2242"
-bmg_id = "1.20.213"
+bmg_id = "1.20.218"
 test_operation_dict = {
     "id": bmg_id,
     "description": [
-        ["display_name", "HC (0:1)"],
-        ["en", "Handicap (0:1)"],
-        ["sen", "Handicap (0:1)"],
-        ["_dynamic", "hc"],
-        ["_hch", "1"],
-        ["_hca", "-1"]
+        ["display_name", "Over/Under 3.5 pts"],
+        ["en", "Over/Under 3.5 pts"],
+        ["sen", "Total Points"],
+        ["_dynamic", "ou"],
+        ["_ou", "3.5"]
     ],
     "event_id": "0.0.0",
     "rules_id": "1.19.10",
@@ -50,29 +49,27 @@ class Testcases(unittest.TestCase):
         fixture_data()
 
         event = lookup_test_event(event_id)
-        self.lookup = list(event.bettingmarketgroups)[1]
-        self.lookup.set_handicaps(home=1)
+        self.lookup = list(event.bettingmarketgroups)[2]
+        self.lookup.set_overunder(3.5)
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroup)
 
     def test_set_handicap(self):
-        self.assertEqual(self.lookup["handicaps"], [1, -1])
+        self.assertEqual(self.lookup["overunder"], 3.5)
 
     def test_bmg_names(self):
         self.assertIn(
-            ['en', 'Handicap (0:1)'],
+            ['en', 'Over/Under 3.5 pts'],
             self.lookup.description
         )
 
     def test_bms_names(self):
         bms = list(self.lookup.bettingmarkets)
-        names_home = bms[0].description
-        names_away = bms[1].description
-        self.assertIn(['en', 'Atlanta Hawks (1)'], names_home)
-        #self.assertIn(['handicap', '1'], names_home)
-        self.assertIn(['en', 'Boston Celtics (-1)'], names_away)
-        #self.assertIn(['handicap', '-1'], names_away)
+        over = bms[0].description
+        under = bms[1].description
+        self.assertIn(['en', 'Under 3.5'], over)
+        self.assertIn(['en', 'Over 3.5'], under)
 
     def test_test_operation_equal(self):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
@@ -122,63 +119,79 @@ class Testcases(unittest.TestCase):
         for r in results:
             self.assertIn(r, resolutions)
 
-    def test_result_00_on_10(self):
+    def test_result_00_on_35(self):
         resolve = LookupBettingMarketGroupResolve(
-            self.lookup, [0, 0], handicaps=[1, 0]
+            self.lookup, [0, 0], overunder=3.5
         )
-        self.assertEqual(resolve._metric, '(0 - 1) - (0 - 0)')
-        self.assertEqual(resolve.metric, -1)
+        self.assertEqual(resolve.metric, 0.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'win']
+            ['1.21.2962', 'not_win'],  # over
+            ['1.21.2963', 'win'],      # under
         )
 
-    def test_result_01_on_10(self):
+    def test_result_10_on_35(self):
         resolve = LookupBettingMarketGroupResolve(
-            self.lookup, [0, 1], handicaps=[1, 0]
+            self.lookup, [1, 0], overunder=3.5
         )
-        self.assertEqual(resolve._metric, '(0 - 1) - (1 - 0)')
-        self.assertEqual(resolve.metric, -2)
+        self.assertEqual(resolve.metric, 1.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'win']
+            ['1.21.2962', 'not_win'],  # over
+            ['1.21.2963', 'win'],      # under
         )
 
-    def test_result_10_on_10(self):
+    def test_result_11_on_35(self):
         resolve = LookupBettingMarketGroupResolve(
-            self.lookup, [1, 0], handicaps=[1, 0]
+            self.lookup, [1, 1], overunder=3.5
         )
-        self.assertEqual(resolve._metric, '(1 - 1) - (0 - 0)')
-        self.assertEqual(resolve.metric, 0)
+        self.assertEqual(resolve.metric, 2.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'not_win']
+            ['1.21.2962', 'not_win'],  # over
+            ['1.21.2963', 'win'],      # under
         )
 
-    def test_result_20_on_10(self):
+    def test_result_12_on_35(self):
         resolve = LookupBettingMarketGroupResolve(
-            self.lookup, [2, 0], handicaps=[1, 0]
+            self.lookup, [1, 2], overunder=3.5
         )
-        self.assertEqual(resolve._metric, '(2 - 1) - (0 - 0)')
-        self.assertEqual(resolve.metric, 1)
+        self.assertEqual(resolve.metric, 3.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'win'],
-            ['1.21.2953', 'not_win']
+            ['1.21.2962', 'not_win'],  # over
+            ['1.21.2963', 'win'],      # under
         )
 
-    def test_result_00_on_20(self):
-        self.lookup.set_handicaps(home=2)
+    def test_result_22_on_35(self):
         resolve = LookupBettingMarketGroupResolve(
-            self.lookup, [0, 0], handicaps=[2, 0]
+            self.lookup, [2, 2], overunder=3.5
         )
-        self.assertEqual(resolve._metric, '(0 - 2) - (0 - 0)')
-        self.assertEqual(resolve.metric, -2)
+        self.assertEqual(resolve.metric, 4.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2954', 'not_win'],
-            ['1.21.2955', 'win']
+            ['1.21.2962', 'win'],       # over
+            ['1.21.2963', 'not_win'],   # under
+        )
+
+    def test_result_20_on_15(self):
+        resolve = LookupBettingMarketGroupResolve(
+            self.lookup, [2, 0], overunder=1.5
+        )
+        self.assertEqual(resolve.metric, 2.0)
+        self.assertResult(
+            resolve.resolutions,
+            ['1.21.2962', 'win'],       # over
+            ['1.21.2963', 'not_win'],   # under
+        )
+
+    def test_result_10_on_15(self):
+        resolve = LookupBettingMarketGroupResolve(
+            self.lookup, [1, 0], overunder=1.5
+        )
+        self.assertEqual(resolve.metric, 1.0)
+        self.assertResult(
+            resolve.resolutions,
+            ['1.21.2962', 'not_win'],  # over
+            ['1.21.2963', 'win'],      # under
         )

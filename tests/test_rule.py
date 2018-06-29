@@ -25,7 +25,7 @@ test_operation_dicts = [
               ["identifier", "R_NBA_OU_1"]],
      "id": rule_id,
      "description": [["en", "Foobar"],
-                     ["grading", '{"metric": "{result.hometeam} - {result.awayteam}", "resolutions": [{"not_win": "{metric} <= 0", "void": "False", "win": "{metric} > 0"}, {"not_win": "{metric} >= 0", "void": "False", "win": "{metric} < 0"}, {"not_win": "{metric} != 0", "void": "False", "win": "{metric} == 0"}]}']]}
+                     ["grading", '{"metric": "{result.total}", "resolutions": [{"not_win": "{metric} > {overunder.value}", "void": "False", "win": "{metric} <= {overunder.value}"}, {"not_win": "{metric} <= {overunder.value}", "void": "False", "win": "{metric} > {overunder.value}"}]}']]}
 ]
 
 

@@ -84,6 +84,15 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             overunder=self["overunder"]
         )
 
+    def _equation(self, eq):
+        return substitute_metric(
+            eq,
+            metric=self.metric,
+            result=self["result"],
+            handicaps=self["handicaps"],
+            overunder=self["overunder"]
+        )
+
     @property
     def metric(self):
         s = self._metric
@@ -104,7 +113,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
                 "equation must be string, was {}".format(
                     type(equation)
                 ))
-        equation = equation.format(metric=self.metric)
+        equation = self._equation(equation)
         try:
             metric = eval(equation)
         except Exception:

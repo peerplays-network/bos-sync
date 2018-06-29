@@ -8,10 +8,14 @@ def decode_variables(**kwargs):
         "teams": Teams,
         "result": Result,
         "handicaps": Handicaps,
-        "overunder": Handicaps,
+        "overunder": OverUnder,
     }
 
-    return { k: v(**kwargs) for k, v in substitutions.items() }
+    ret = {k: v(**kwargs) for k, v in substitutions.items()}
+    # Add a scalar value for metric if present
+    if "metric" in kwargs:
+        ret["metric"] = kwargs.get("metric")
+    return ret
 
 
 class Result:
@@ -21,11 +25,13 @@ class Result:
         result = kwargs.get("result", [0, 0]) or [0, 0]
         self.hometeam = result[0]
         self.awayteam = result[1]
+
         self.total = sum([float(x) for x in result])
 
         # aliases
         self.home = self.hometeam
         self.away = self.awayteam
+
 
 class Teams:
     """ Defines a few variables to be used in conjuctions with {teams.X}
@@ -36,6 +42,7 @@ class Teams:
             x.capitalize() for x in teams[0].split(" ")])
         self.away = " ".join([
             x.capitalize() for x in teams[1].split(" ")])
+
 
 class Handicaps:
     """ Defines a few variables to be used in conjuctions with {handicaps.X}
@@ -49,6 +56,7 @@ class Handicaps:
         # The other team has the advantage in the 'score'
         self.home_score = int(self.away) if int(self.away) >= 0 else 0
         self.away_score = int(self.home) if int(self.home) >= 0 else 0
+
 
 class OverUnder:
     """ Defines a few variables to be used in conjuctions with {handicaps.X}
@@ -68,7 +76,7 @@ def substitute_bettingmarket_name(scheme, **kwargs):
     return ret
 
 
-def substitute_metric(metric, **kwargs):
+def substitute_metric(text, **kwargs):
     """ This allows to place certain variables in the Rules for grading
     """
-    return metric.format(**decode_variables(**kwargs))
+    return text.format(**decode_variables(**kwargs))
