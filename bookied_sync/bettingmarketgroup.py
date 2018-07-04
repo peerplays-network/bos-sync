@@ -102,48 +102,6 @@ class LookupBettingMarketGroup(Lookup, dict):
             return True
         return False
 
-    @staticmethod
-    def cmp_all_description():
-        def cmp(soll, ist):
-            lookupdescr = soll.description
-            chainsdescr = ist.get("description", ist.get("new_description"))
-            return (
-                (bool(chainsdescr) and bool(lookupdescr)) and
-                all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr])
-            )
-        return cmp
-
-    @staticmethod
-    def cmp_required_keys():
-        def cmp(soll, ist):
-            def is_update(bmg):
-                return any([x in bmg for x in [
-                    "betting_market_group_id", "new_description",
-                    "new_event_id", "new_rules_id"]])
-
-            def is_create(bmg):
-                return any([x in bmg for x in [
-                    "description", "event_id", "rules_id"]])
-            if not is_update(ist) and not is_create(ist):
-                raise ValueError
-            return is_update(ist) or is_create(ist)
-        return cmp
-
-    @staticmethod
-    def cmp_status():
-        def cmp(soll, ist):
-            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
-        return cmp
-
-    @staticmethod
-    def cmp_event():
-        def cmp(soll, ist):
-            event_id = ist.get("event_id", ist.get("new_event_id"))
-            test_event = soll.valid_object_id(event_id, Event)
-            return (not test_event or ist.get("event_id", ist.get("new_event_id")) == soll.event.id)
-        return cmp
-
     def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
@@ -350,3 +308,46 @@ class LookupBettingMarketGroup(Lookup, dict):
             return [key, soll.description_json[key]] in ist["description"]
 
         return cmp
+
+    @staticmethod
+    def cmp_all_description():
+        def cmp(soll, ist):
+            lookupdescr = soll.description
+            chainsdescr = ist.get("description", ist.get("new_description"))
+            return (
+                (bool(chainsdescr) and bool(lookupdescr)) and
+                all([a in chainsdescr for a in lookupdescr]) and
+                all([b in lookupdescr for b in chainsdescr])
+            )
+        return cmp
+
+    @staticmethod
+    def cmp_required_keys():
+        def cmp(soll, ist):
+            def is_update(bmg):
+                return any([x in bmg for x in [
+                    "betting_market_group_id", "new_description",
+                    "new_event_id", "new_rules_id"]])
+
+            def is_create(bmg):
+                return any([x in bmg for x in [
+                    "description", "event_id", "rules_id"]])
+            if not is_update(ist) and not is_create(ist):
+                raise ValueError
+            return is_update(ist) or is_create(ist)
+        return cmp
+
+    @staticmethod
+    def cmp_status():
+        def cmp(soll, ist):
+            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
+        return cmp
+
+    @staticmethod
+    def cmp_event():
+        def cmp(soll, ist):
+            event_id = ist.get("event_id", ist.get("new_event_id"))
+            test_event = soll.valid_object_id(event_id, Event)
+            return (not test_event or ist.get("event_id", ist.get("new_event_id")) == soll.event.id)
+        return cmp
+
