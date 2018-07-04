@@ -182,3 +182,18 @@ class Testcases(unittest.TestCase):
             ['1.21.2954', 'not_win'],
             ['1.21.2955', 'win']
         )
+
+    def test_find_fuzzy_market(self):
+        self.lookup.set_handicaps(home=5)
+
+        self.assertEqual(self.lookup.find_id(
+            find_id_search=[
+                lambda x, y: ["en", x.description_json["en"]] in y["description"],
+            ]
+        ), "1.20.220")
+
+        self.assertEqual(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(0),
+            ]
+        ), "1.20.220")

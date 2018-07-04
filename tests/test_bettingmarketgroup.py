@@ -51,7 +51,7 @@ class Testcases(unittest.TestCase):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
         with self.assertRaises(ValueError):
-            self.assertTrue(self.lookup.test_operation_equal({}))
+            self.assertFalse(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
         self.assertEqual(self.lookup.find_id(), bmg_id)

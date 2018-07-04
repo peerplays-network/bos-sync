@@ -208,7 +208,7 @@ class Lookup(dict, BlockchainInstance):
         return LookupSport(sportname)
 
     # Update call
-    def update(self):
+    def update(self, **kwargs):
         """ This call makes sure that the data in the  lookup matches the data
             on the blockchain for the object we are currenty looking at.
 
@@ -227,7 +227,7 @@ class Lookup(dict, BlockchainInstance):
         if "id" not in self or not self["id"]:
 
             # Test if an object with the characteristics (i.e. name) exist
-            id = self.find_id()
+            id = self.find_id(**kwargs)
             if id:
                 log.info((
                     "Object \"{}\" carries id {} on the blockchain. "
@@ -237,7 +237,7 @@ class Lookup(dict, BlockchainInstance):
 
             else:
                 have_approved = False
-                for has_pending_new in self.has_pending_new():
+                for has_pending_new in self.has_pending_new(**kwargs):
                     log.info((
                         "Object \"{}\" has pending update proposal. Approving {}"
                     ).format(self.identifier, has_pending_new))
@@ -275,7 +275,7 @@ class Lookup(dict, BlockchainInstance):
                 str(self.get("name", ""))
             ))
             have_approved = False
-            for has_pending_update in self.has_pending_update():
+            for has_pending_update in self.has_pending_update(**kwargs):
                 log.info(
                     "Object has pending update: {}: {} in {}".format(
                         self.__class__.__name__,
@@ -397,11 +397,16 @@ class Lookup(dict, BlockchainInstance):
         for p in approved_read_for_delete:
             del Lookup.approval_map[p]
 
-    def has_pending_new(self):
+    def has_pending_new(self, **kwargs):
         """ This call tests if a proposal that would create this object is
             pending on-chain
 
             It only returns true if the exact content is proposed
+
+            We forward **kwargs so we can use custom
+            triggers when doing operation comparison. This feature
+            allows us to define the 'comparing'-lambda from the outside
+            and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
         for proposalObject in self.get_pending_operations():
@@ -409,44 +414,60 @@ class Lookup(dict, BlockchainInstance):
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
                     log.debug("Testing pending proposal {}".format(proposal["id"]))
-                    if self.test_operation_equal(op[1], proposal=proposal):
+                    kwargs["proposal"] = proposal
+                    if self.test_operation_equal(op[1], **kwargs):
                         yield dict(pid=pid, oid=oid, proposal=proposal)
 
-    def has_buffered_new(self):
+    def has_buffered_new(self, **kwargs):
         """ This call tests if an operation is buffered for proposal
 
             It only returns true if the exact content is proposed
+
+            We forward **kwargs so we can use custom
+            triggers when doing operation comparison. This feature
+            allows us to define the 'comparing'-lambda from the outside
+            and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_create:
-                if self.test_operation_equal(op[1]):
+                if self.test_operation_equal(op[1], **kwargs):
                     return pid, oid
 
-    def has_pending_update(self):
+    def has_pending_update(self, **kwargs):
         """ Test if there is an update on-chain to properly match blockchain
             content with lookup content
 
             It only returns true if the exact content is proposed
+
+            We forward **kwargs so we can use custom
+            triggers when doing operation comparison. This feature
+            allows us to define the 'comparing'-lambda from the outside
+            and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
         for proposalObject in self.get_pending_operations():
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_update:
-                    if self.test_operation_equal(op[1], proposal=proposal):
+                    if self.test_operation_equal(op[1], proposal=proposal, **kwargs):
                         yield dict(pid=pid, oid=oid, proposal=proposal)
 
-    def has_buffered_update(self):
+    def has_buffered_update(self, **kwargs):
         """ Test if there is an update buffered locally to properly match
             blockchain content with  lookup content
 
             It only returns true if the exact content is proposed
+
+            We forward **kwargs so we can use custom
+            triggers when doing operation comparison. This feature
+            allows us to define the 'comparing'-lambda from the outside
+            and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_update:
-                if self.test_operation_equal(op[1]):
+                if self.test_operation_equal(op[1], **kwargs):
                     return pid, oid
 
     @property
@@ -554,7 +575,6 @@ class Lookup(dict, BlockchainInstance):
         if test and fetch:
             fetch(id)
         return test
-
 
 
     # Prototypes #############################################################
