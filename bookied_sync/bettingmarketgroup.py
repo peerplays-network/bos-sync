@@ -350,4 +350,3 @@ class LookupBettingMarketGroup(Lookup, dict):
             test_event = soll.valid_object_id(event_id, Event)
             return (not test_event or ist.get("event_id", ist.get("new_event_id")) == soll.event.id)
         return cmp
-

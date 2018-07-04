@@ -197,3 +197,22 @@ class Testcases(unittest.TestCase):
                 LookupBettingMarketGroup.cmp_fuzzy(0),
             ]
         ), "1.20.220")
+
+        self.lookup.set_handicaps(home=5.5)
+        self.assertFalse(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(0),
+            ]
+        ))
+
+        self.assertFalse(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(.4),
+            ]
+        ))
+
+        self.assertTrue(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(.51),
+            ]
+        ))
