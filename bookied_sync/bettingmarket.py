@@ -1,6 +1,7 @@
 from . import log
 from .lookup import Lookup
 from .rule import LookupRules
+from .utils import dList2Dict
 from peerplays.bettingmarket import (
     BettingMarket, BettingMarkets)
 from peerplays.bettingmarketgroup import (
@@ -38,8 +39,6 @@ class LookupBettingMarket(Lookup, dict):
                 "description": description
             }
         )
-        # FIXME: Figure out if the name has a variable
-        # FIXME: Figure out if this is a dynamic bmg
 
     @property
     def event(self):
@@ -53,52 +52,10 @@ class LookupBettingMarket(Lookup, dict):
         """
         return self.parent
 
-    @staticmethod
-    def cmp_all_description():
-        def cmp(soll, ist):
-            lookupdescr = soll.description
-            chainsdescr = ist.get("description", ist.get("new_description"))
-            return (
-                (bool(chainsdescr) and bool(lookupdescr)) and
-                all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr])
-            )
-        return cmp
-
-    @staticmethod
-    def cmp_required_keys():
-        def cmp(soll, ist):
-            def is_update(bm):
-                return any([x in bm for x in [
-                    "new_group_id", "new_description",
-                    "betting_market_id"]])
-            def is_create(bm):
-                return any([x in bm for x in [
-                    "group_id", "description"]])
-            if not is_create(ist) and not is_update(ist):
-                raise ValueError
-            return is_update(ist) or is_create(ist)
-        return cmp
-
-    @staticmethod
-    def cmp_status():
-        def cmp(soll, ist):
-            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
-        return cmp
-
-    @staticmethod
-    def cmp_group():
-        def cmp(soll, ist):
-            group_id = ist.get("group_id", ist.get("new_group_id"))
-            test_group = soll.valid_object_id(group_id)
-            return (not test_group or ist.get("group_id", ist.get("new_group_id")) == soll.group.id)
-        return cmp
-
     def test_operation_equal(self, bm, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-
         test_operation_equal_search = kwargs.get("test_operation_equal_search", [
             # We compare only the 'eng' content by default
             LookupBettingMarket.cmp_required_keys(),
@@ -129,7 +86,7 @@ class LookupBettingMarket(Lookup, dict):
             return True
         return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
@@ -145,10 +102,20 @@ class LookupBettingMarket(Lookup, dict):
         bms = BettingMarkets(
             self.parent.id,
             peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.description))
+
+        find_id_search = kwargs.get("find_id_search", [
+            # We compare only the 'eng' content by default
+            # 'x' will be the Lookup
+            # 'y' will be the content of the on-chain Object!
+            LookupBettingMarket.cmp_description("en"),
+        ])
 
         for bm in bms:
-            if en_descrp in bm["description"]:
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, bm)
+                for func in find_id_search
+            ]):
                 return bm["id"]
 
     def is_synced(self):
@@ -194,3 +161,60 @@ class LookupBettingMarket(Lookup, dict):
                 v.format(**self)   # replace variables
             ] for k, v in self["description"].items()
         ]
+
+    @staticmethod
+    def cmp_description(key="en"):
+        """ This method simply compares the a given description key
+            (e.g. 'en')
+        """
+        def cmp(soll, ist):
+            return [key, soll.description_json[key]] in ist["description"]
+
+        return cmp
+
+    @staticmethod
+    def cmp_all_description():
+        def cmp(soll, ist):
+            lookupdescr = soll.description
+            chainsdescr = ist.get("description", ist.get("new_description"))
+            return (
+                (bool(chainsdescr) and bool(lookupdescr)) and
+                all([a in chainsdescr for a in lookupdescr]) and
+                all([b in lookupdescr for b in chainsdescr])
+            )
+        return cmp
+
+    @staticmethod
+    def cmp_required_keys():
+        def cmp(soll, ist):
+            def is_update(bm):
+                return any([x in bm for x in [
+                    "new_group_id", "new_description",
+                    "betting_market_id"]])
+
+            def is_create(bm):
+                return any([x in bm for x in [
+                    "group_id", "description"]])
+
+            if not is_create(ist) and not is_update(ist):
+                raise ValueError
+            return is_update(ist) or is_create(ist)
+        return cmp
+
+    @staticmethod
+    def cmp_status():
+        def cmp(soll, ist):
+            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
+        return cmp
+
+    @staticmethod
+    def cmp_group():
+        def cmp(soll, ist):
+            group_id = ist.get("group_id", ist.get("new_group_id"))
+            test_group = soll.valid_object_id(group_id)
+            return (not test_group or ist.get("group_id", ist.get("new_group_id")) == soll.group.id)
+        return cmp
+
+    @property
+    def description_json(self):
+        return dList2Dict(self.description)

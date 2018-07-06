@@ -235,7 +235,7 @@ class LookupBettingMarketGroup(Lookup, dict):
 
     @property
     def description_json(self):
-        return {v[0]: v[1] for v in self.description}
+        return dList2Dict(self.description)
 
     def set_overunder(self, ou):
         self["overunder"] = ou
