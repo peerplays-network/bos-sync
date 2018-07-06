@@ -1,6 +1,7 @@
 from .lookup import Lookup
 from .rule import LookupRules
 from .exceptions import MissingMandatoryValue
+from .utils import dList2Dict
 from peerplays.event import Event
 from peerplays.rule import Rule
 from peerplays.asset import Asset
@@ -79,13 +80,12 @@ class LookupBettingMarketGroup(Lookup, dict):
             LookupBettingMarketGroup.cmp_all_description()
         ])
 
-        event_id = bmg.get("event_id", bmg.get("new_event_id"))
-        test_event = self.valid_object_id(event_id, Event)
-
         """ We need to properly deal with the fact that betting market groups
             cannot be distinguished alone from the payload if they are bundled
             in a proposal and refer to event_id 0.0.x
         """
+        event_id = bmg.get("event_id", bmg.get("new_event_id"))
+        test_event = self.valid_object_id(event_id, Event)
         if event_id and not test_event and event_id[0] == "0" and "proposal" in kwargs:
             full_proposal = kwargs.get("proposal", {})
             if full_proposal:
@@ -123,7 +123,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             # We compare only the 'eng' content by default
             # 'x' will be the Lookup
             # 'y' will be the content of the on-chain Object!
-            LookupBettingMarketGroup.cmp_function("en"),
+            LookupBettingMarketGroup.cmp_description("en"),
         ])
 
         for bmg in bmgs:
@@ -300,12 +300,43 @@ class LookupBettingMarketGroup(Lookup, dict):
         return cmp
 
     @staticmethod
-    def cmp_function(key="en"):
+    def cmp_description(key="en"):
         """ This method simply compares the a given description key
             (e.g. 'en')
         """
         def cmp(soll, ist):
             return [key, soll.description_json[key]] in ist["description"]
+
+        return cmp
+
+    @staticmethod
+    def cmp_descriptions(key=["en"]):
+        """ This method simply compares the a given description key
+            (e.g. 'en')
+        """
+        def cmp(soll, ist):
+            return all([
+                bool([k, soll.description_json[k]] in ist["description"])
+                for k in key
+            ])
+
+        return cmp
+
+    @staticmethod
+    def cmp_external_descriptions():
+        return LookupBettingMarketGroup.cmp_descriptions_key_lambda(lambda x: x[0] != "_")
+
+    @staticmethod
+    def cmp_descriptions_key_lambda(f):
+        """ This method simply compares the a given description key
+            (e.g. 'en')
+        """
+        def cmp(soll, ist):
+            keys = filter(f, dList2Dict(ist["description"]).keys())
+            return all([
+                bool([k, soll.description_json[k]] in ist["description"])
+                for k in keys
+            ])
 
         return cmp
 
@@ -350,3 +381,43 @@ class LookupBettingMarketGroup(Lookup, dict):
             test_event = soll.valid_object_id(event_id, Event)
             return (not test_event or ist.get("event_id", ist.get("new_event_id")) == soll.event.id)
         return cmp
+
+    @staticmethod
+    def is_dynamic_type(x, typ):
+        if LookupBettingMarketGroup.is_hc_type(typ):
+            return LookupBettingMarketGroup.is_hc_type(x)
+        else:
+            return LookupBettingMarketGroup.is_ou_type(x)
+
+    @staticmethod
+    def is_hc_type(x):
+        return x == "hc" or x == "1x2_hc"
+
+    @staticmethod
+    def is_ou_type(x):
+        return x == "ou"
+
+    def is_dynamic(self, operation):
+        if not "description" in operation:
+            return False
+        description = dList2Dict(operation["description"])
+        return "_dynamic" in description
+
+    def set_dynamic(self, operation):
+        """ This method is used to obtain dynamic parameters from existing
+            proposals and objects and direct them back into lookup
+        """
+        description = dList2Dict(operation["description"])
+        if "_dynamic" in description:
+            if (
+                LookupBettingMarketGroup.is_hc_type(description["_dynamic"]) and
+                "_hch" in description
+            ):
+                log.info("Setting handicap: {}".format(description["_hch"]))
+                self.set_handicaps(home=description["_hch"])
+            elif (
+                LookupBettingMarketGroup.is_ou_type(description["_dynamic"]) and
+                "_ou" in description
+            ):
+                log.info("Setting overunder: {}".format(description["_ou"]))
+                self.set_overunder(description["_ou"])

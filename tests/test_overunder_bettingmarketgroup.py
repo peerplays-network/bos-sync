@@ -1,24 +1,11 @@
-import os
-import mock
 import unittest
-import datetime
-from pprint import pprint
-from peerplays import PeerPlays
+from copy import deepcopy
 from peerplays.event import Event
-from peerplays.rule import Rules
-from peerplays.eventgroup import EventGroups
-from peerplays.bettingmarketgroup import BettingMarketGroups
-from peerplays.blockchainobject import BlockchainObject, ObjectCache
-from peerplays.instance import set_shared_blockchain_instance
-from bookied_sync.lookup import Lookup
-from bookied_sync.eventgroup import LookupEventGroup
-from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from bookied_sync.bettingmarketgroupresolve import (
     LookupBettingMarketGroupResolve
 )
 from peerplays.utils import parse_time
-
 from .fixtures import fixture_data, config, lookup_test_event
 
 event_id = "1.18.2242"
@@ -194,4 +181,82 @@ class Testcases(unittest.TestCase):
             resolve.resolutions,
             ['1.21.2962', 'not_win'],  # over
             ['1.21.2963', 'win'],      # under
+        )
+
+    def test_find_fuzzy_market(self):
+        self.assertEqual(self.lookup.find_id(
+            find_id_search=[
+                lambda x, y: ["en", x.description_json["en"]] in y["description"],
+            ]
+        ), "1.20.218")
+
+        self.assertEqual(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(0),
+            ]
+        ), "1.20.218")
+
+        self.lookup.set_overunder(5)
+        self.assertFalse(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(0),
+            ]
+        ))
+
+        self.assertFalse(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(.4),
+            ]
+        ))
+
+        self.assertTrue(self.lookup.find_id(
+            find_id_search=[
+                LookupBettingMarketGroup.cmp_fuzzy(.51),
+            ]
+        ))
+
+    def test_fuzzy_operation_compare(self):
+        self.assertTrue(
+            self.lookup.test_operation_equal(
+                test_operation_dict,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_required_keys(),
+                    LookupBettingMarketGroup.cmp_status(),
+                    LookupBettingMarketGroup.cmp_event(),
+                    LookupBettingMarketGroup.cmp_all_description()
+                ]
+            )
+        )
+        t2 = deepcopy(test_operation_dict)
+        t2["description"] = [
+            ["display_name", "Over/Under 3.5 pts"],
+            ["en", "Over/Under 3.5 pts"],
+            ["sen", "Total Points"],
+            ["_dynamic", "FAKE"],
+            ["_ou", "FAKE"]
+        ]
+        self.assertFalse(
+            self.lookup.test_operation_equal(
+                t2,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_all_description()
+                ]
+            )
+        )
+        self.assertTrue(
+            self.lookup.test_operation_equal(
+                t2,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_descriptions(["en", "display_name"])
+                ]
+            )
+        )
+
+        self.assertTrue(
+            self.lookup.test_operation_equal(
+                t2,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_descriptions_key_lambda(lambda x: x[0] != "_")
+                ]
+            )
         )

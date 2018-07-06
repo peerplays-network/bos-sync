@@ -1,24 +1,10 @@
-import os
-import mock
 import unittest
-import datetime
-from pprint import pprint
-from peerplays import PeerPlays
+from copy import deepcopy
 from peerplays.event import Event
-from peerplays.rule import Rules
-from peerplays.eventgroup import EventGroups
-from peerplays.bettingmarketgroup import BettingMarketGroups
-from peerplays.blockchainobject import BlockchainObject, ObjectCache
-from peerplays.instance import set_shared_blockchain_instance
-from bookied_sync.lookup import Lookup
-from bookied_sync.eventgroup import LookupEventGroup
-from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from bookied_sync.bettingmarketgroupresolve import (
     LookupBettingMarketGroupResolve
 )
-from peerplays.utils import parse_time
-
 from .fixtures import fixture_data, config, lookup_test_event
 
 event_id = "1.18.2242"
@@ -216,3 +202,36 @@ class Testcases(unittest.TestCase):
                 LookupBettingMarketGroup.cmp_fuzzy(.51),
             ]
         ))
+
+    def test_fuzzy_operation_compare(self):
+        self.assertTrue(
+            self.lookup.test_operation_equal(
+                test_operation_dict,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_required_keys(),
+                    LookupBettingMarketGroup.cmp_status(),
+                    LookupBettingMarketGroup.cmp_event(),
+                    LookupBettingMarketGroup.cmp_all_description()
+                ]
+            )
+        )
+        t2 = deepcopy(test_operation_dict)
+        t2["description"] = [
+            ["en", "Handicap (0:1)"],
+        ]
+        self.assertFalse(
+            self.lookup.test_operation_equal(
+                t2,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_all_description()
+                ]
+            )
+        )
+        self.assertTrue(
+            self.lookup.test_operation_equal(
+                t2,
+                test_operation_equal_search=[
+                    LookupBettingMarketGroup.cmp_description("en")
+                ]
+            )
+        )
