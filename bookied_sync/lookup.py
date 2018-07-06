@@ -145,10 +145,18 @@ class Lookup(dict, BlockchainInstance):
 
     @staticmethod
     def _clear():
-        Lookup.data = dict()
+        # Lookup.data = dict()
         Lookup.approval_map = {}
         Lookup.direct_buffer = None
         Lookup.proposal_buffer = None
+
+    def clear(self):
+        self.clear_proposal_buffer()
+        self.clear_direct_buffer()
+        self.clear_approval_map()
+
+    def clear_approval_map(self):
+        Lookup.approval_map = {}
 
     def clear_proposal_buffer(self, expiration=60 * 60):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
@@ -416,8 +424,6 @@ class Lookup(dict, BlockchainInstance):
                     log.debug("Testing pending proposal {}".format(proposal["id"]))
                     kwargs["proposal"] = proposal
                     if self.test_operation_equal(op[1], **kwargs):
-                        if self.is_dynamic(op[1]):
-                            self.set_dynamic(op[1])
                         yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_new(self, **kwargs):
@@ -434,8 +440,6 @@ class Lookup(dict, BlockchainInstance):
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_create:
                 if self.test_operation_equal(op[1], **kwargs):
-                    if self.is_dynamic(op[1]):
-                        self.set_dynamic(op[1])
                     return pid, oid
 
     def has_pending_update(self, **kwargs):
@@ -455,8 +459,6 @@ class Lookup(dict, BlockchainInstance):
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_update:
                     if self.test_operation_equal(op[1], proposal=proposal, **kwargs):
-                        if self.is_dynamic(op[1]):
-                            self.set_dynamic(op[1])
                         yield dict(pid=pid, oid=oid, proposal=proposal)
 
     def has_buffered_update(self, **kwargs):
@@ -474,8 +476,6 @@ class Lookup(dict, BlockchainInstance):
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_update:
                 if self.test_operation_equal(op[1], **kwargs):
-                    if self.is_dynamic(op[1]):
-                        self.set_dynamic(op[1])
                     return pid, oid
 
     @property
@@ -613,15 +613,5 @@ class Lookup(dict, BlockchainInstance):
 
     def propose_update(self):
         """ Propose to update this object to match  lookup
-        """
-        pass
-
-    def is_dynamic(self, operation):
-        """ This method is implemented in bettingmarketgroup.py
-        """
-        return False
-
-    def set_dynamic(self, operation):
-        """ This method is implemented in bettingmarketgroup.py
         """
         pass

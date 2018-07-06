@@ -31,13 +31,14 @@ class LookupBettingMarketGroup(Lookup, dict):
         extra_data={}
     ):
         Lookup.__init__(self)
-        self.identifier = "{}/{}".format(
-            event.names_json["en"],
-            bmg["description"]["en"]
-        )
         self.event = event
         self.parent = event
+        # Let's predefine dynamic matrial
         dict.__init__(self, extra_data)
+        dict.update(self, dict(
+            handicaps=[0, 0],
+            overunder=0
+        ))
         dict.update(
             self,
             bmg
@@ -54,6 +55,10 @@ class LookupBettingMarketGroup(Lookup, dict):
                         mandatory
                     )
                 )
+        self.identifier = "{}/{}".format(
+            event.names_json["en"],
+            self.description_json["en"]
+        )
 
     @property
     def sport(self):
@@ -99,6 +104,16 @@ class LookupBettingMarketGroup(Lookup, dict):
             func(self, bmg)
             for func in test_operation_equal_search
         ]):
+            """ This is special!
+
+                Since we allow fuzzy logic for matching dynamic parameters, we
+                need to pass back the dynamic parameter in case we found a
+                object on chain or as a proposal that matches our criteria
+                here.
+
+            """
+            if self.is_dynamic(bmg):
+                self.set_dynamic(bmg)
             return True
         return False
 
@@ -126,12 +141,23 @@ class LookupBettingMarketGroup(Lookup, dict):
             LookupBettingMarketGroup.cmp_description("en"),
         ])
 
+
         for bmg in bmgs:
             if all([
                 # compare by using 'all' the funcs in find_id_search
                 func(self, bmg)
                 for func in find_id_search
             ]):
+                """ This is special!
+
+                    Since we allow fuzzy logic for matching dynamic parameters, we
+                    need to pass back the dynamic parameter in case we found a
+                    object on chain or as a proposal that matches our criteria
+                    here.
+
+                """
+                if self.is_dynamic(bmg):
+                    self.set_dynamic(bmg)
                 return bmg["id"]
 
     def is_synced(self):
@@ -217,12 +243,14 @@ class LookupBettingMarketGroup(Lookup, dict):
             handicaps=self.get("handicaps"),
             overunder=self.get("overunder")
         )
-        if self.get("handicaps"):
+        # if self.get("handicaps"):
+        if self.get("type") == "hc":
             description["_dynamic"] = "hc"
             description["_hch"] = str(self.get("handicaps")[0])
             description["_hca"] = str(self.get("handicaps")[1])
 
-        if self.get("overunder"):
+        # if self.get("overunder"):
+        if self.get("type") == "ou":
             description["_dynamic"] = "ou"
             description["_ou"] = str(self.get("overunder"))
 
@@ -261,9 +289,13 @@ class LookupBettingMarketGroup(Lookup, dict):
                 center = float(center)
                 return x >= center - spread and x <= center + spread
 
+            ist_description = ist.get("description", ist.get("new_description"))
+            if not ist_description:
+                return False
+
             self_description = soll.description_json
-            description = {v[0]: v[1] for v in ist["description"]}
-            if "_dynamic" not in description:
+            description = dList2Dict(ist_description)
+            if "_dynamic" not in self_description or "_dynamic" not in description:
                 return False
 
             if self_description["_dynamic"].lower() != description["_dynamic"]:
@@ -305,7 +337,11 @@ class LookupBettingMarketGroup(Lookup, dict):
             (e.g. 'en')
         """
         def cmp(soll, ist):
-            return [key, soll.description_json[key]] in ist["description"]
+            ist_description = ist.get("description", ist.get("new_description"))
+            if not ist_description:
+                return False
+
+            return [key, soll.description_json.get(key)] in ist_description
 
         return cmp
 
@@ -315,8 +351,11 @@ class LookupBettingMarketGroup(Lookup, dict):
             (e.g. 'en')
         """
         def cmp(soll, ist):
+            ist_description = ist.get("description", ist.get("new_description"))
+            if not ist_description:
+                return False
             return all([
-                bool([k, soll.description_json[k]] in ist["description"])
+                bool([k, soll.description_json.get(k)] in ist_description)
                 for k in key
             ])
 
@@ -332,9 +371,13 @@ class LookupBettingMarketGroup(Lookup, dict):
             (e.g. 'en')
         """
         def cmp(soll, ist):
-            keys = filter(f, dList2Dict(ist["description"]).keys())
+            ist_description = ist.get("description", ist.get("new_description"))
+            if not ist_description:
+                return False
+
+            keys = filter(f, dList2Dict(ist_description).keys())
             return all([
-                bool([k, soll.description_json[k]] in ist["description"])
+                bool([k, soll.description_json.get(k)] in ist_description)
                 for k in keys
             ])
 

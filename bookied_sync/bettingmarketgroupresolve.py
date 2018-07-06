@@ -27,7 +27,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
     ):
         Lookup.__init__(self)
         self.identifier = "{}::resolution".format(
-            bmg["description"]["en"],
+            bmg.description_json["en"],
         )
         self.parent = bmg
         dict.__init__(self, extra_data)

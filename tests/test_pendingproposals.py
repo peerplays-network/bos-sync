@@ -64,12 +64,12 @@ class Testcases(unittest.TestCase):
     def test_approve_proposal_instead(self):
         logging.info("Creating ....")
         self.lookup.update()
-        # this is supposed to be an update of the proposal 1.10.336
+        # this is supposed to be an update of the proposal 1.10.1
         tx = self.lookup.direct_buffer
         self.assertEqual(tx["operations"][0][0], 23)
         self.assertEqual(
             tx["operations"][0][1]["proposal"],
-            "1.10.336",
+            "1.10.1",
         )
         self.assertIn(
             "1.2.7",

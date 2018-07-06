@@ -168,7 +168,11 @@ class LookupBettingMarket(Lookup, dict):
             (e.g. 'en')
         """
         def cmp(soll, ist):
-            return [key, soll.description_json[key]] in ist["description"]
+            ist_description = ist.get("description", ist.get("new_description"))
+            if not ist_description:
+                return False
+
+            return [key, soll.description_json.get(key)] in ist_description
 
         return cmp
 
