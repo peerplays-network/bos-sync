@@ -267,9 +267,9 @@ class LookupBettingMarketGroup(Lookup, dict):
         self["overunder"] = ou
 
     def set_handicaps(self, home=None, away=None):
-        if away and not home:
+        if away is not None and home is None:
             home = -int(away)
-        if not away and home:
+        if away is None and home is not None:
             away = -int(home)
         self["handicaps"] = [home, away]
 
