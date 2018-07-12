@@ -30,6 +30,7 @@ class Testcases(unittest.TestCase):
 
     def setUp(self):
         fixture_data()
+        self.lookup.set_overunder(3.5)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -37,10 +38,16 @@ class Testcases(unittest.TestCase):
 
         event = lookup_test_event(event_id)
         self.lookup = list(event.bettingmarketgroups)[2]
-        self.lookup.set_overunder(3.5)
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroup)
+
+    def test_rounding_overunder(self):
+        self.lookup.set_overunder(3.1)
+        self.assertIn(
+            ['en', 'Over/Under 3.5 pts'],
+            self.lookup.description
+        )
 
     def test_set_handicap(self):
         self.assertEqual(self.lookup["overunder"], 3.5)
