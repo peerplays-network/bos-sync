@@ -17,7 +17,9 @@ Submodules
    bookied_sync.participant
    bookied_sync.rule
    bookied_sync.sport
+   bookied_sync.substitutions
    bookied_sync.update
+   bookied_sync.utils
 
 Module contents
 ---------------

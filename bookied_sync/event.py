@@ -202,7 +202,7 @@ class LookupEvent(Lookup, dict):
         test_season = False  # bool(lookupseason) and bool(chainseason)
         test_start_time = self.get("start_time") and event.get("start_time")
 
-        test_event_group_id = event_group_id and event_group_id[0] == "1"
+        test_event_group_id = self.valid_object_id(event_group_id)
 
         if (
             all([a in chainsnames for a in lookupnames]) and
@@ -226,7 +226,7 @@ class LookupEvent(Lookup, dict):
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         events = Events(
@@ -377,3 +377,7 @@ class LookupEvent(Lookup, dict):
         evg = self.eventgroup
         start_time = self.get("start_time", datetime.utcnow())
         return (start_time - timedelta(days=evg.leadtime_Max))
+
+    @property
+    def event_group_id(self):
+        return self.parent.id

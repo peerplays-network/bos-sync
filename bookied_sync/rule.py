@@ -42,6 +42,10 @@ class LookupRules(Lookup, dict):
         else:
             raise ValueError
 
+        # trim
+        chainsnames = [[x[0], x[1].strip()] for x in chainsnames]
+        lookupnames = [[x[0], x[1].strip()] for x in lookupnames]
+
         if (all([a in chainsnames for a in lookupnames]) and
                 all([b in lookupnames for b in chainsnames])):
             return True

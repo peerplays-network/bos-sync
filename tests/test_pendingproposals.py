@@ -9,59 +9,30 @@ from peerplaysbase.operationids import operations
 from peerplays.blockchainobject import BlockchainObject, ObjectCache
 from peerplays.instance import set_shared_blockchain_instance
 
+from .fixtures import fixture_data, config, lookup_test_event
+
 import logging
 # logging.basicConfig(level=logging.INFO)
 
-this_id = "1.16.0"
 
-test_operation_dicts = [
-    {
-        "name": [["en", "American Football (Unittest)"],
-                 ["de", "Amerikanisches Football (Unittest)"],
-                 ['identifier', 'AmericanFootball (Unittest)']],
-    }
-]
-additional_objects = dict()
-
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
+fixture_data()
 
 
 class Testcases(unittest.TestCase):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.lookup = LookupSport("AmericanFootball")
-        self.lookup.set_approving_account("init0")
-        self.setupCache()
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
 
     def setUp(self):
         self.lookup.clear_proposal_buffer()
         self.lookup.clear_direct_buffer()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lookup = LookupSport("AmericanFootball")
+        self.lookup.set_approving_account("init0")
+
     def test_search_pending_props(self):
+        # As defined in bookiesports
+        self.assertEqual(self.lookup.id, "1.16.0")
+
         # Proposal creation
         self.lookup.propose_new()
 
@@ -93,37 +64,12 @@ class Testcases(unittest.TestCase):
     def test_approve_proposal_instead(self):
         logging.info("Creating ....")
         self.lookup.update()
-
-        # Now lets store the stuff in an onchain proposal already
-        # by caching
-        ops = list()
-        for x in self.lookup.get_buffered_operations():
-            ops.append(x[0])
-        cache = ObjectCache(default_expiration=2.5)
-        cache["1.2.1"] = [{'available_active_approvals': [],
-                           'available_key_approvals': [],
-                           'available_owner_approvals': [],
-                           'expiration_time': '2018-05-29T10:23:13',
-                           'id': '1.10.336',
-                           'proposed_transaction': {'expiration': '2018-05-29T10:23:13',
-                                                    'extensions': [],
-                                                    'operations': ops,
-                                                    'ref_block_num': 0,
-                                                    'ref_block_prefix': 0},
-                           'proposer': '1.2.7',
-                           'required_active_approvals': ['1.2.1'],
-                           'required_owner_approvals': []}]
-        Proposals.cache = cache
-
-        self.lookup.update()
-
-        # this is supposed to be an update of the proposal 1.10.336
+        # this is supposed to be an update of the proposal 1.10.1
         tx = self.lookup.direct_buffer
-
         self.assertEqual(tx["operations"][0][0], 23)
         self.assertEqual(
             tx["operations"][0][1]["proposal"],
-            "1.10.336",
+            "1.10.1",
         )
         self.assertIn(
             "1.2.7",

@@ -47,6 +47,6 @@ class UpdateTransaction(dict):
         )
 
     def get_result(self, op_id=0):
-        if not "operation_results" in self:
+        if "operation_results" not in self:
             return
         return self["operation_results"][int(op_id)][1]
