@@ -1,3 +1,4 @@
+import math
 from .lookup import Lookup
 from .rule import LookupRules
 from .exceptions import MissingMandatoryValue
@@ -264,7 +265,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         return dList2Dict(self.description)
 
     def set_overunder(self, ou):
-        self["overunder"] = ou
+        self["overunder"] = math.floor(float(ou)) + 0.5
 
     def set_handicaps(self, home=None, away=None):
         if away is not None and home is None:
