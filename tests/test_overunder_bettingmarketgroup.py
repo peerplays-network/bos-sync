@@ -203,16 +203,19 @@ class Testcases(unittest.TestCase):
             ]
         ), "1.20.218")
 
-        self.lookup.set_overunder(5)
+        # No match because   floor(4.9) + 0.5 = 4.5
+        self.lookup.set_overunder(4.9)
         self.assertFalse(self.lookup.find_id(
             find_id_search=[
                 LookupBettingMarketGroup.cmp_fuzzy(0),
             ]
         ))
 
-        self.assertFalse(self.lookup.find_id(
+        # Match!
+        self.lookup.set_overunder(5.0)
+        self.assertTrue(self.lookup.find_id(
             find_id_search=[
-                LookupBettingMarketGroup.cmp_fuzzy(.4),
+                LookupBettingMarketGroup.cmp_fuzzy(0),
             ]
         ))
 

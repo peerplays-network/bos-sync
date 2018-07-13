@@ -62,15 +62,8 @@ class OverUnder:
     """ Defines a few variables to be used in conjuctions with {handicaps.X}
     """
     def __init__(self, **kwargs):
-        import math
-        # obtain value
-        value = float(kwargs.get("overunder", 0) or 0)
-
-        # round value
-        value = math.floor(value) + 0.5
-
-        # set value
-        self.value = value
+        # store value
+        self.value = float(kwargs.get("overunder", 0) or 0)
 
 
 def substitute_bettingmarket_name(scheme, **kwargs):
