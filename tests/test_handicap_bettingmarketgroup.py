@@ -1,6 +1,8 @@
 import unittest
 from copy import deepcopy
 from peerplays.event import Event
+from bookied_sync.utils import dList2Dict
+from bookied_sync import comparators
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from bookied_sync.bettingmarketgroupresolve import (
     LookupBettingMarketGroupResolve
@@ -174,32 +176,32 @@ class Testcases(unittest.TestCase):
 
         self.assertEqual(self.lookup.find_id(
             find_id_search=[
-                lambda x, y: ["en", x.description_json["en"]] in y["description"],
+                lambda x, y: ["en", dList2Dict(x.description)["en"]] in y["description"],
             ]
         ), "1.20.220")
 
         self.assertEqual(self.lookup.find_id(
             find_id_search=[
-                LookupBettingMarketGroup.cmp_fuzzy(0),
+                comparators.cmp_fuzzy(0),
             ]
         ), "1.20.220")
 
         self.lookup.set_handicaps(home=5.5)
         self.assertFalse(self.lookup.find_id(
             find_id_search=[
-                LookupBettingMarketGroup.cmp_fuzzy(0),
+                comparators.cmp_fuzzy(0),
             ]
         ))
 
         self.assertFalse(self.lookup.find_id(
             find_id_search=[
-                LookupBettingMarketGroup.cmp_fuzzy(.4),
+                comparators.cmp_fuzzy(.4),
             ]
         ))
 
         self.assertTrue(self.lookup.find_id(
             find_id_search=[
-                LookupBettingMarketGroup.cmp_fuzzy(.51),
+                comparators.cmp_fuzzy(.51),
             ]
         ))
 
@@ -208,10 +210,12 @@ class Testcases(unittest.TestCase):
             self.lookup.test_operation_equal(
                 test_operation_dict,
                 test_operation_equal_search=[
-                    LookupBettingMarketGroup.cmp_required_keys(),
-                    LookupBettingMarketGroup.cmp_status(),
-                    LookupBettingMarketGroup.cmp_event(),
-                    LookupBettingMarketGroup.cmp_all_description()
+                    comparators.cmp_required_keys(
+                        ["description", "event_id", "rules_id"]
+                    ),
+                    comparators.cmp_status(),
+                    comparators.cmp_event(),
+                    comparators.cmp_all_description()
                 ]
             )
         )
@@ -223,7 +227,7 @@ class Testcases(unittest.TestCase):
             self.lookup.test_operation_equal(
                 t2,
                 test_operation_equal_search=[
-                    LookupBettingMarketGroup.cmp_all_description()
+                    comparators.cmp_all_description()
                 ]
             )
         )
@@ -231,7 +235,7 @@ class Testcases(unittest.TestCase):
             self.lookup.test_operation_equal(
                 t2,
                 test_operation_equal_search=[
-                    LookupBettingMarketGroup.cmp_description("en")
+                    comparators.cmp_description("en")
                 ]
             )
         )

@@ -59,6 +59,8 @@ def cmp_fuzzy(spread=1):
 
 
 def cmp_lang(key, lang):
+    """ Compare a single *language* of double listed data obtained from `key`
+    """
     def cmp(soll, ist):
         _ist = ist.get(key, ist.get("new_{}".format(key)))
         _soll = getattr(soll, key)
@@ -70,14 +72,19 @@ def cmp_lang(key, lang):
     return cmp
 
 
-def cmp_langs(key, langs=["en"], apply_filter=None):
-    def cmp(soll, ist):
+def cmp_langs(key, langs=None):
+    """ Compare multiple *languages* of a double listed data obtained from
+        `key`
+    """
+    def cmp(soll, ist, langs=langs, key=key):
         ist = ist.get(key, ist.get("new_{}".format(key)))
         if not ist:
             return False
 
-        if apply_filter:
-            langs = filter(apply_filter, dList2Dict(ist).keys())
+        if callable(langs):
+            langs = filter(langs, dList2Dict(ist).keys())
+        if not langs:
+            langs = ["en"]
 
         return all([
             bool([k, dList2Dict(soll.description).get(k)] in ist)
@@ -87,6 +94,8 @@ def cmp_langs(key, langs=["en"], apply_filter=None):
 
 
 def cmp_all_langs(key):
+    """ Compare *all* *languages* of a double listed data obtained from `key`
+    """
     def cmp(soll, ist):
         _soll = getattr(soll, key)
         _ist = ist.get(key, ist.get("new_{}".format(key)))
@@ -99,6 +108,16 @@ def cmp_all_langs(key):
 
 
 def cmp_required_keys(*required_keys):
+    """ Ensure that the required keys are available in the data.
+
+        .. note:: ``required_keys`` is a list of the list of list keys that
+            need to all be available. This is used to allow *and* and *or*
+            conditions and works like this:
+
+                required_keys = [[A1, A2, A3, ...], [B1, B2, B3, ...]]
+                return True if (A1 & A2 & A3 & ...) || (B1, B2, B3, ...)
+
+    """
     def cmp(soll, ist):
         def test(data, keys):
             return any([x in data for x in keys])
@@ -109,6 +128,8 @@ def cmp_required_keys(*required_keys):
 
 
 def cmp_status():
+    """ Compare the status attribute of an operation
+    """
     def cmp(soll, ist):
         return (
             not bool(soll.get("status")) or
@@ -119,6 +140,8 @@ def cmp_status():
 
 
 def cmp_parent(name):
+    """ Compare the parent element denoted by ``name`` (e.g. sport_id)
+    """
     def cmp(soll, ist):
         alt_key_name = "new_{}".format(name)
         parent_id = ist.get(name, ist.get(alt_key_name))
@@ -128,6 +151,8 @@ def cmp_parent(name):
 
 
 def cmp_start_time():
+    """ Compare start time
+    """
     def cmp(soll, ist):
         from peerplays.utils import formatTime
         return (
@@ -139,50 +164,74 @@ def cmp_start_time():
 
 
 def cmp_description(lang="en"):
+    """ compare a single language of the description
+    """
     return cmp_lang("description", lang)
 
 
 def cmp_descriptions(langs=["en"]):
+    """ Compare multiple languages of description
+    """
     return cmp_langs("description", langs)
 
 
 def cmp_external_descriptions():
-    return cmp_langs("description", apply_filter=lambda x: x[0] != "_")
+    """ Compare all those languages that do not start with ``_``
+    """
+    return cmp_langs("description", langs=lambda x: x[0] != "_")
 
 
 def cmp_all_description():
+    """ Compare all descriptions
+    """
     return cmp_all_langs("description")
 
 
 def cmp_all_name():
+    """ Compare all names
+    """
     return cmp_all_langs("name")
 
 
 def cmp_name(lang="en"):
+    """ Compare a single language of the names
+    """
     return cmp_lang("name", lang)
 
 
 def cmp_names(langs=["en"]):
+    """ Compare multiple languages of names
+    """
     return cmp_langs("name", langs)
 
 
 def cmp_event():
+    """ compare event_id
+    """
     return cmp_parent("event_id")
 
 
 def cmp_group():
+    """ compare betting market group id
+    """
     return cmp_parent("group_id")
 
 
 def cmp_event_group():
+    """ compare event group id
+    """
     return cmp_parent("event_group_id")
 
 
 def cmp_sport():
+    """ compare sport id
+    """
     return cmp_parent("sport_id")
 
 
 def cmp_season():
+    """ compare the content of season
+    """
     def cmp(soll, ist):
         """ Currently disabled
         """

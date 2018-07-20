@@ -3,6 +3,7 @@ from .rule import LookupRules
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup
 )
+from bookied_sync.utils import dList2Dict
 from peerplays.rule import Rule
 from .substitutions import substitute_metric
 
@@ -27,7 +28,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
     ):
         Lookup.__init__(self)
         self.identifier = "{}::resolution".format(
-            bmg.description_json["en"],
+            dList2Dict(bmg.description)["en"],
         )
         self.parent = bmg
         dict.__init__(self, extra_data)
