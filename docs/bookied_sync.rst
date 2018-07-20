@@ -9,6 +9,7 @@ Submodules
    bookied_sync.bettingmarket
    bookied_sync.bettingmarketgroup
    bookied_sync.bettingmarketgroupresolve
+   bookied_sync.comparators
    bookied_sync.event
    bookied_sync.eventgroup
    bookied_sync.eventstatus
