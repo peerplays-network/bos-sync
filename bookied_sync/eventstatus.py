@@ -18,7 +18,7 @@ class LookupEventStatus(Lookup, dict):
         :param dict extra_data: Optionally provide additional data that is
                stored in the same dictionary
 
-        ... note:: Please note that the list of teams begins with the **home**
+        .. note:: Please note that the list of teams begins with the **home**
                    team! Only two teams per event are supported!
     """
 

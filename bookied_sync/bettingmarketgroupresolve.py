@@ -10,7 +10,7 @@ from .substitutions import substitute_metric
 class LookupBettingMarketGroupResolve(Lookup, dict):
     """ Lookup Class for Resolving BettingMarketGroups
 
-        ... note:: If ``result`` is a dictionary, then first element is
+        .. note:: If ``result`` is a dictionary, then first element is
             ``homeTeam`` and second is ``awayTeam``.
     """
 
