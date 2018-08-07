@@ -266,10 +266,20 @@ class LookupBettingMarketGroup(Lookup, dict):
         self["overunder"] = math.floor(float(ou)) + 0.5
 
     def set_handicaps(self, home=None, away=None):
+        if home is not None:
+            if float(home) == 0.0:
+                home = -0.5
+            else:
+                home = math.copysign(math.floor(math.fabs(float(home))) + 0.5, float(home))
+        if away is not None:
+            if float(home) == 0.0:
+                away = -0.5
+            else:
+                away = math.copysign(math.floor(math.fabs(float(away))) + 0.5, float(away))
         if away is not None and home is None:
-            home = -int(away)
+            home = -away
         if away is None and home is not None:
-            away = -int(home)
+            away = -home
         self["handicaps"] = [home, away]
 
     @staticmethod
