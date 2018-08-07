@@ -12,9 +12,9 @@ from peerplays.utils import parse_time
 def substitution(teams, scheme):
     class Teams:
         home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
+            x for x in teams[0].split(" ")])
         away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
+            x for x in teams[1].split(" ")])
 
     ret = dict()
     for lang, name in scheme.items():
