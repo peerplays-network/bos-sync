@@ -1,9 +1,9 @@
 from .lookup import Lookup
 from peerplays.rule import Rules, Rule
-from . import log
+from . import log, comparators
 
 
-class LookupRules(Lookup, dict):
+class LookupRule(Lookup, dict):
     """ Lookup Class for Rule
 
         :param str sport: Sport Identifier
@@ -15,7 +15,7 @@ class LookupRules(Lookup, dict):
 
     def __init__(self, sport, rules):
         self.identifier = "{}/{}".format(sport, rules)
-        super(LookupRules, self).__init__()
+        Lookup.__init__(self)
         assert sport in self.data["sports"], "Sport {} not avaialble".format(
             sport
         )
@@ -32,32 +32,41 @@ class LookupRules(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        lookupnames = self.descriptions
-        chainsnames = [[]]
-        # description tag also contains the grading
-        if "name" in operation:
-            chainsnames = operation["description"]
-        elif "new_name" in operation:
-            chainsnames = operation["new_description"]
-        else:
-            raise ValueError
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys([
+                "new_description", "new_name"
+            ], [
+                "description", "name"
+            ]),
+            comparators.cmp_all_description(),
+            comparators.cmp_all_name(),
+        ])
 
-        if (all([a in chainsnames for a in lookupnames]) and
-                all([b in lookupnames for b in chainsnames])):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, operation)
+            for func in test_operation_equal_search
+        ]):
             return True
+        return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         rules = Rules(peerplays_instance=self.peerplays)
+        find_id_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_name("en"),
+        ])
         for rule in rules:
-            if (
-                ["en", self["name"]["en"]] in rule["name"]
-            ):
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, rule)
+                for func in find_id_search
+            ]):
                 return rule["id"]
 
     def is_synced(self):
@@ -91,6 +100,12 @@ class LookupRules(Lookup, dict):
         )
 
     @property
+    def name(self):
+        """ Alias for `names`
+        """
+        return self.names
+
+    @property
     def names(self):
         """ Properly format names for internal use
         """
@@ -102,6 +117,12 @@ class LookupRules(Lookup, dict):
                 v
             ] for k, v in names.items()
         ]
+
+    @property
+    def description(self):
+        """ Alias for `descriptions`
+        """
+        return self.descriptions
 
     @property
     def descriptions(self):
@@ -120,3 +141,9 @@ class LookupRules(Lookup, dict):
                 v.strip()
             ] for k, v in data.items()
         ]
+
+
+class LookupRules(LookupRule):
+    """ Legacy compatibility
+    """
+    pass

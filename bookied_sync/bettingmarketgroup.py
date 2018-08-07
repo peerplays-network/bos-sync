@@ -1,27 +1,15 @@
+import math
 from .lookup import Lookup
 from .rule import LookupRules
 from .exceptions import MissingMandatoryValue
+from .utils import dList2Dict
 from peerplays.event import Event
 from peerplays.rule import Rule
 from peerplays.asset import Asset
 from peerplays.bettingmarketgroup import (
     BettingMarketGroups, BettingMarketGroup)
-from . import log
-
-
-def substitution(teams, scheme):
-    class Teams:
-        home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
-        away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
-
-    ret = dict()
-    for lang, name in scheme.items():
-        ret[lang] = name.format(
-            teams=Teams
-        )
-    return ret
+from . import log, comparators
+from .substitutions import substitute_bettingmarket_name
 
 
 class LookupBettingMarketGroup(Lookup, dict):
@@ -44,13 +32,14 @@ class LookupBettingMarketGroup(Lookup, dict):
         extra_data={}
     ):
         Lookup.__init__(self)
-        self.identifier = "{}/{}".format(
-            event.names_json["en"],
-            bmg["description"]["en"]
-        )
         self.event = event
         self.parent = event
+        # Let's predefine dynamic matrial
         dict.__init__(self, extra_data)
+        dict.update(self, dict(
+            handicaps=[0, 0],
+            overunder=0
+        ))
         dict.update(
             self,
             bmg
@@ -67,6 +56,10 @@ class LookupBettingMarketGroup(Lookup, dict):
                         mandatory
                     )
                 )
+        self.identifier = "{}/{}".format(
+            dList2Dict(event.names)["en"],
+            dList2Dict(self.description)["en"]
+        )
 
     @property
     def sport(self):
@@ -85,43 +78,25 @@ class LookupBettingMarketGroup(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        def is_update(bmg):
-            return any([x in bmg for x in [
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys([
                 "betting_market_group_id", "new_description",
-                "new_event_id", "new_rules_id"]])
-
-        def is_create(bmg):
-            return any([x in bmg for x in [
-                "description", "event_id", "rules_id"]])
-
-        if not is_create(bmg) and not is_update(bmg):
-            raise ValueError
-
-        lookupdescr = self.description
-        chainsdescr = [[]]
-        prefix = "new_" if is_update(bmg) else ""
-        chainsdescr = bmg.get(prefix + "description")
-        rules_id = bmg.get(prefix + "rules_id")
-        event_id = bmg.get(prefix + "event_id")
-        # Fixme: sync object to also include the proper status
-        status = bmg.get("status")
-
-        # Test if Rules and Events exist
-        # only if the id starts with 1.
-        test_rule = rules_id and rules_id[0] == "1"
-        if test_rule:
-            Rule(rules_id)
-
-        test_event = event_id and event_id[0] == "1"
-        if test_event:
-            Event(event_id)
-
-        test_status = bool(self.get("status"))
+                "new_event_id", "new_rules_id"
+            ], [
+                "betting_market_group_id", "description",
+                "event_id", "rules_id"
+            ]),
+            comparators.cmp_status(),
+            comparators.cmp_event(),
+            comparators.cmp_all_description()
+        ])
 
         """ We need to properly deal with the fact that betting market groups
             cannot be distinguished alone from the payload if they are bundled
             in a proposal and refer to event_id 0.0.x
         """
+        event_id = bmg.get("event_id", bmg.get("new_event_id"))
+        test_event = self.valid_object_id(event_id, Event)
         if event_id and not test_event and event_id[0] == "0" and "proposal" in kwargs:
             full_proposal = kwargs.get("proposal", {})
             if full_proposal:
@@ -130,38 +105,62 @@ class LookupBettingMarketGroup(Lookup, dict):
                 if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
                     return False
 
-        if (
-            all([a in chainsdescr for a in lookupdescr]) and
-            all([b in lookupdescr for b in chainsdescr]) and
-            (not test_event or event_id == self.event.id) and
-            # FIXME: This needs to be properly tested by unit tests, for some
-            # reasons this does sometimes fail to match
-            # (not test_rule or rules_id == self.rules.id) and
-            (not test_status or status == self.get(status))
-        ):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, bmg)
+            for func in test_operation_equal_search
+        ]):
+            """ This is special!
+
+                Since we allow fuzzy logic for matching dynamic parameters, we
+                need to pass back the dynamic parameter in case we found a
+                object on chain or as a proposal that matches our criteria
+                here.
+
+            """
+            if self.is_dynamic(bmg):
+                self.set_dynamic(bmg)
             return True
         return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         bmgs = BettingMarketGroups(
             self.parent.id,
             peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.description))
+
+        find_id_search = kwargs.get("find_id_search", [
+            # We compare only the 'eng' content by default
+            comparators.cmp_description("en"),
+        ])
 
         for bmg in bmgs:
-            if en_descrp in bmg["description"]:
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, bmg)
+                for func in find_id_search
+            ]):
+                """ This is special!
+
+                    Since we allow fuzzy logic for matching dynamic parameters, we
+                    need to pass back the dynamic parameter in case we found a
+                    object on chain or as a proposal that matches our criteria
+                    here.
+
+                """
+                if self.is_dynamic(bmg):
+                    self.set_dynamic(bmg)
                 return bmg["id"]
 
     def is_synced(self):
@@ -214,7 +213,12 @@ class LookupBettingMarketGroup(Lookup, dict):
         for market in self["bettingmarkets"]:
             bm_counter += 1
             # Overwrite the description with with proper replacement of variables
-            description = substitution(self.event["teams"], market["description"])
+            description = substitute_bettingmarket_name(
+                market["description"],
+                teams=self.event["teams"],
+                handicaps=self.get("handicaps"),
+                overunder=self.get("overunder")
+            )
 
             # Yield one Lookup per betting market
             yield LookupBettingMarket(
@@ -236,9 +240,74 @@ class LookupBettingMarketGroup(Lookup, dict):
     def description(self):
         """ Properly format description for internal use
         """
+        description = substitute_bettingmarket_name(
+            self["description"],
+            teams=self.event["teams"],
+            handicaps=self.get("handicaps"),
+            overunder=self.get("overunder")
+        )
+        if self.get("dynamic") == "hc":
+            description["_dynamic"] = "hc"
+            description["_hch"] = str(self.get("handicaps")[0])
+            description["_hca"] = str(self.get("handicaps")[1])
+
+        if self.get("dynamic") == "ou":
+            description["_dynamic"] = "ou"
+            description["_ou"] = str(self.get("overunder"))
+
         return [
             [
                 k,
                 v
-            ] for k, v in self["description"].items()
+            ] for k, v in description.items()
         ]
+
+    def set_overunder(self, ou):
+        self["overunder"] = math.floor(float(ou)) + 0.5
+
+    def set_handicaps(self, home=None, away=None):
+        if away is not None and home is None:
+            home = -int(away)
+        if away is None and home is not None:
+            away = -int(home)
+        self["handicaps"] = [home, away]
+
+    @staticmethod
+    def is_dynamic_type(x, typ):
+        if LookupBettingMarketGroup.is_hc_type(typ):
+            return LookupBettingMarketGroup.is_hc_type(x)
+        else:
+            return LookupBettingMarketGroup.is_ou_type(x)
+
+    @staticmethod
+    def is_hc_type(x):
+        return x == "hc" or x == "1x2_hc"
+
+    @staticmethod
+    def is_ou_type(x):
+        return x == "ou"
+
+    def is_dynamic(self, operation):
+        if "description" not in operation:
+            return False
+        description = dList2Dict(operation["description"])
+        return "_dynamic" in description
+
+    def set_dynamic(self, operation):
+        """ This method is used to obtain dynamic parameters from existing
+            proposals and objects and direct them back into lookup
+        """
+        description = dList2Dict(operation["description"])
+        if "_dynamic" in description:
+            if (
+                LookupBettingMarketGroup.is_hc_type(description["_dynamic"]) and
+                "_hch" in description
+            ):
+                log.info("Setting handicap: {}".format(description["_hch"]))
+                self.set_handicaps(home=description["_hch"])
+            elif (
+                LookupBettingMarketGroup.is_ou_type(description["_dynamic"]) and
+                "_ou" in description
+            ):
+                log.info("Setting overunder: {}".format(description["_ou"]))
+                self.set_overunder(description["_ou"])

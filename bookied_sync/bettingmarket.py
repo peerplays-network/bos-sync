@@ -1,10 +1,12 @@
 from . import log
 from .lookup import Lookup
 from .rule import LookupRules
+from .utils import dList2Dict
 from peerplays.bettingmarket import (
     BettingMarket, BettingMarkets)
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup, BettingMarketGroups)
+from . import comparators
 
 
 class LookupBettingMarket(Lookup, dict):
@@ -38,8 +40,6 @@ class LookupBettingMarket(Lookup, dict):
                 "description": description
             }
         )
-        # FIXME: Figure out if the name has a variable
-        # FIXME: Figure out if this is a dynamic bmg
 
     @property
     def event(self):
@@ -53,34 +53,29 @@ class LookupBettingMarket(Lookup, dict):
         """
         return self.parent
 
-    def test_operation_equal(self, bmg, **kwargs):
+    def test_operation_equal(self, bm, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        def is_update(bmg):
-            return any([x in bmg for x in [
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys([
                 "new_group_id", "new_description",
-                "betting_market_id"]])
-
-        def is_create(bmg):
-            return any([x in bmg for x in [
-                "group_id", "description"]])
-
-        if not is_create(bmg) and not is_update(bmg):
-            raise ValueError
-
-        lookupdescr = self.description
-        chainsdescr = [[]]
-        prefix = "new_" if is_update(bmg) else ""
-        chainsdescr = bmg[prefix + "description"]
-        group_id = bmg[prefix + "group_id"]
-
-        test_group = group_id and group_id[0] == "1"
+                "betting_market_id"
+            ], [
+                "group_id", "description",
+                "betting_market_id"
+            ]),
+            comparators.cmp_status(),
+            comparators.cmp_group(),
+            comparators.cmp_all_description()
+        ])
 
         """ We need to properly deal with the fact that betting markets
             cannot be distinguished alone from the payload if they are bundled
             in a proposal and refer to betting_market_group_id 0.0.x
         """
+        group_id = bm.get("group_id", bm.get("new_group_id"))
+        test_group = self.valid_object_id(group_id)
         if group_id and not test_group and group_id[0] == "0" and "proposal" in kwargs:
             full_proposal = kwargs.get("proposal")
             if full_proposal:
@@ -89,32 +84,42 @@ class LookupBettingMarket(Lookup, dict):
                 if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
                     return False
 
-        if (all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr]) and
-                (not test_group or group_id == self.group.id)):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, bm)
+            for func in test_operation_equal_search
+        ]):
             return True
         return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the
+            .. note:: This only checks if a sport exists with the
                         same description in **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         bms = BettingMarkets(
             self.parent.id,
             peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.description))
+
+        find_id_search = kwargs.get("find_id_search", [
+            # We compare only the 'eng' content by default
+            comparators.cmp_description("en"),
+        ])
 
         for bm in bms:
-            if en_descrp in bm["description"]:
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, bm)
+                for func in find_id_search
+            ]):
                 return bm["id"]
 
     def is_synced(self):

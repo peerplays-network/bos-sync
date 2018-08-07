@@ -18,92 +18,33 @@ from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.utils import parse_time, formatTime
 
-parent_id = "1.17.16"
-this_id = "1.18.0"
+from .fixtures import fixture_data, config, lookup_test_event
+
+event_group_id = "1.17.12"
+event_id = "1.18.2242"
 
 start_time = parse_time(formatTime(datetime.datetime.utcnow()))
 start_time_tomorrow = parse_time(formatTime(datetime.datetime.utcnow() + datetime.timedelta(days=1)))
 
-miniumum_event_dict = {
-    "id": this_id,
-    "teams": ["Demo", "Foobar"],
-    "eventgroup_identifier": "NFL#PreSeas",
-    "sport_identifier": "AmericanFootball",
-    "season": {"en": "2017"},
-    "start_time": start_time,
-    "status": "ongoing",
+test_operation_dict = {
+    "id": event_id,
+    "name": [['en', 'Boston Celtics @ Atlanta Hawks']],
+    "event_group_id": event_group_id,
+    "season": [["en", "2017"]],
+    "status": "upcoming",
+    "start_time": "2022-10-16T00:00:00"
 }
-test_operation_dicts = [
-    {
-        "id": "1.18.1",
-        "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
-        "event_group_id": parent_id,
-        "season": [["en", "2017"]],
-        "status": "ongoing",
-        "start_time": formatTime(start_time_tomorrow)
-    }, {
-        "id": this_id,
-        "name": [["en", "Demo : Foobar"], ['en_us', 'Foobar @ Demo']],
-        "event_group_id": parent_id,
-        "season": [["en", "2017"]],
-        "status": "ongoing",
-        "start_time": formatTime(start_time)
-    }
-]
-additional_objects = dict()
-additional_objects["event_groups"] = [{
-    'identifier': 'NFL#PreSeas',
-    'name': {'en': 'NFL - Pre-Season',
-             'de': 'NFL - Vorseason'},
-    'aliases': ['National Football League - Pre-Season',
-                'American Football - Pre-Season'],
-    'id': parent_id,
-    'participants': 'NFL_Teams_2017-18',
-    'bettingmarketgroups': ['NFL_ML_2017-18_1'],
-    'eventscheme': {'name': {'en': '{teams.home} : {teams.away}',
-                             'en_us': '{teams.away} @ {teams.home}'}},
-    'leadtime_Max': 2,
-    'start_date': "2017/08/01",
-    'finish_date': '2017/08/31',
-    'sport_id': '1.16.0'}]
-
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
 
 
 class Testcases(unittest.TestCase):
 
+    def setUp(self):
+        fixture_data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.setupCache()
-        self.lookup = LookupEvent(**miniumum_event_dict)
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        _cache[parent_id] = {"id": parent_id}
-        for i in test_operation_dicts:
-            _cache[i["id"]] = i
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
-        EventGroups.cache[parent_id] = additional_objects["event_groups"]
-        Events.cache[parent_id] = test_operation_dicts
+        fixture_data()
+        self.lookup = lookup_test_event(event_id)
 
     def test_eventgroup(self):
 
@@ -111,31 +52,26 @@ class Testcases(unittest.TestCase):
         self.assertIsInstance(self.lookup.peerplays, PeerPlays)
 
         self.assertTrue(self.lookup.parent)
-        self.assertTrue(self.lookup.parent_id)
-        self.assertEqual(self.lookup.parent["id"], self.lookup.parent_id)
+        self.assertTrue(self.lookup.event_group_id)
+        self.assertEqual(self.lookup.parent.id, self.lookup.event_group_id)
 
     def test_eventscheme_namecreation(self):
         self.assertIn(
-            ['en', 'Demo : Foobar'],
-            self.lookup.names
-        )
-        self.assertIn(
-            ['en_us', 'Foobar @ Demo'],
+            test_operation_dict["name"][0],
             self.lookup.names
         )
 
     def test_test_operation_equal(self):
-        self.assertFalse(self.lookup.test_operation_equal(test_operation_dicts[0]))
-        self.assertTrue(self.lookup.test_operation_equal(test_operation_dicts[1]))
+        self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
         with self.assertRaises(ValueError):
             self.assertTrue(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
-        self.assertEqual(self.lookup.find_id(), this_id)
+        self.assertEqual(self.lookup.find_id(), event_id)
 
     def test_is_synced(self):
-        self.lookup["id"] = this_id
+        self.lookup["id"] = event_id
         self.assertTrue(self.lookup.is_synced())
 
     def test_propose_new(self):
@@ -155,7 +91,7 @@ class Testcases(unittest.TestCase):
     def test_propose_update(self):
         from peerplaysbase.operationids import operations
 
-        self.lookup["id"] = this_id
+        self.lookup["id"] = event_id
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_update()
         tx = tx.json()
@@ -171,105 +107,95 @@ class Testcases(unittest.TestCase):
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupEvent)
         self.assertIsInstance(LookupEvent(**{
-            "teams": ["Demo", "Foobar"],
-            "eventgroup_identifier": "NFL#PreSeas",
-            "sport_identifier": "AmericanFootball",
+            "teams": ["Atlanta Hawks", "Boston Celtics"],
+            "eventgroup_identifier": "NBA",
+            "sport_identifier": "Basketball",
             "season": {"en": "2017-00-00"},
             "start_time": start_time
         }), LookupEvent)
 
         with self.assertRaises(ValueError):
             self.assertIsInstance(LookupEvent(**{
-                "teams": ["Demo", "Foobar"],
-                "eventgroup_identifier": "NFL#PreSeas",
-                "sport_identifier": "AmericanFootball",
+                "teams": ["Atlanta Hawks", "Boston Celtics"],
+                "eventgroup_identifier": "NBA",
+                "sport_identifier": "Basketball",
                 "season": {"en": "2017-00-00"},
                 "start_time": "SOME STRING"
             }), LookupEvent)
 
         with self.assertRaises(ValueError):
             self.assertIsInstance(LookupEvent(**{
-                "teams": ["Demo", "Foobar", "third TEAM"],
-                "eventgroup_identifier": "NFL#PreSeas",
-                "sport_identifier": "AmericanFootball",
+                "teams": ["Atlanta Hawks", "Boston Celtics", "third TEAM"],
+                "eventgroup_identifier": "NBA",
+                "sport_identifier": "Basketball",
                 "season": {"en": "2017-00-00"},
                 "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
             self.assertIsInstance(LookupEvent(**{
-                "eventgroup_identifier": "NFL#PreSeas",
-                "sport_identifier": "AmericanFootball",
+                "eventgroup_identifier": "NBA",
+                "sport_identifier": "Basketball",
                 "season": {"en": "2017-00-00"},
                 "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
             self.assertIsInstance(LookupEvent(**{
-                "teams": ["Demo", "Foobar"],
-                "sport_identifier": "AmericanFootball",
+                "teams": ["Atlanta Hawks", "Boston Celtics"],
+                "sport_identifier": "Basketball",
                 "season": {"en": "2017-00-00"},
                 "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
             self.assertIsInstance(LookupEvent(**{
-                "teams": ["Demo", "Foobar"],
-                "eventgroup_identifier": "NFL#PreSeas",
+                "teams": ["Atlanta Hawks", "Boston Celtics"],
+                "eventgroup_identifier": "NBA",
                 "season": {"en": "2017-00-00"},
                 "start_time": start_time
             }), LookupEvent)
 
         with self.assertRaises(TypeError):
             self.assertIsInstance(LookupEvent({
-                "teams": ["Demo", "Foobar"],
-                "eventgroup_identifier": "NFL#PreSeas",
-                "sport_identifier": "AmericanFootball",
+                "teams": ["Atlanta Hawks", "Boston Celtics"],
+                "eventgroup_identifier": "NBA",
+                "sport_identifier": "Basketball",
                 "start_time": start_time
             }), LookupEvent)
 
         self.assertIsInstance(self.lookup["teams"], list)
-        self.assertEqual(self.lookup["teams"][0], "Demo")
-        self.assertEqual(self.lookup["teams"][1], "Foobar")
-
-    def test_find_event(self):
-        event = LookupEvent.find_event(
-            sport_identifier=miniumum_event_dict["sport_identifier"],
-            eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
-            teams=miniumum_event_dict["teams"],
-            start_time=start_time
-        )
-        self.assertTrue(event)
-        self.assertEqual(event["id"], "1.18.0")
+        self.assertEqual(self.lookup["teams"][0], "Atlanta Hawks")
+        self.assertEqual(self.lookup["teams"][1], "Boston Celtics")
 
     def test_participants(self):
         with self.assertRaises(ValueError):
             LookupEvent(**{
-                "teams": ["Demo", "Foobar-Not"],
-                "eventgroup_identifier": "NFL#PreSeas",
-                "sport_identifier": "AmericanFootball",
+                "teams": ["Atlanta Hawks", "Boston Celtics-Not"],
+                "eventgroup_identifier": "NBA",
+                "sport_identifier": "Basketball",
                 "season": {"en": "2017-00-00"},
                 "start_time": start_time
             })
 
         LookupEvent(**{
-            "teams": ["Jets", "Buffy"],
-            "eventgroup_identifier": "NFL#PreSeas",
-            "sport_identifier": "AmericanFootball",
+            "teams": ["Nets", "Mavericks"],
+            "eventgroup_identifier": "NBA",
+            "sport_identifier": "Basketball",
             "season": {"en": "2017-00-00"},
             "start_time": start_time
         })
 
     def test_leadtimemax_close(self):
         event = LookupEvent(
-            sport_identifier=miniumum_event_dict["sport_identifier"],
-            eventgroup_identifier=miniumum_event_dict["eventgroup_identifier"],
-            teams=miniumum_event_dict["teams"],
+            sport_identifier=self.lookup["sport_identifier"],
+            eventgroup_identifier=self.lookup["eventgroup_identifier"],
+            teams=self.lookup["teams"],
             start_time=parse_time("2020-05-28T15:14:26")
         )
+
         # We set the leadtime_max to 2 days
         leadtime_Max = event.eventgroup["leadtime_Max"]
-        self.assertFalse(event.can_open)
 
         # If the event starts now, it should be allowed to open
         event["start_time"] = datetime.datetime.utcnow()

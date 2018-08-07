@@ -18,65 +18,37 @@ from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.utils import parse_time
 
-this_id = "1.16.0"
+from .fixtures import fixture_data, config, lookup_test_event
 
-test_operation_dicts = [
-    {
-        "id": this_id,
-        "name": [["en", "American Football"], ["de", "Amerikanisches Football"], ['identifier', 'AmericanFootball']],
-    }, {
-        "id": this_id,
-        "name": [["de", "Amerikanisches Football"], ["en", "American Football"], ['identifier', 'AmericanFootball']],
-    }
-]
-additional_objects = dict()
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
+sport_id = "1.16.1"
 
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
+test_operation_dict = {
+    "id": sport_id,
+    "name": [['en', 'Basketball'], ['identifier', 'Basketball'], ['sen', 'Basketball']],
+}
 
 
 class Testcases(unittest.TestCase):
 
+    def setUp(self):
+        fixture_data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        self.lookup = LookupSport("AmericanFootball")
-        self.setupCache()
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        for i in test_operation_dicts:
-            _cache[i["id"]] = i
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
+        fixture_data()
+        self.lookup = LookupSport("Basketball")
 
     def test_test_operation_equal(self):
-        for x in test_operation_dicts:
-            self.assertTrue(self.lookup.test_operation_equal(x))
+        self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
         with self.assertRaises(ValueError):
             self.assertTrue(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
-        self.assertEqual(self.lookup.find_id(), this_id)
+        self.assertEqual(self.lookup.find_id(), sport_id)
 
     def test_is_synced(self):
-        self.lookup["id"] = this_id
+        self.lookup["id"] = sport_id
         self.assertTrue(self.lookup.is_synced())
 
     def test_propose_new(self):
@@ -96,7 +68,7 @@ class Testcases(unittest.TestCase):
     def test_propose_update(self):
         from peerplaysbase.operationids import operations
 
-        self.lookup["id"] = this_id
+        self.lookup["id"] = sport_id
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_update()
         tx = tx.json()

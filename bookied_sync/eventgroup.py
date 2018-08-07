@@ -3,7 +3,7 @@ import sys
 from peerplays.eventgroup import EventGroups, EventGroup
 from .lookup import Lookup
 from .exceptions import ObjectNotFoundInLookup
-from . import log
+from . import log, comparators
 
 
 class LookupEventGroup(Lookup, dict):
@@ -62,51 +62,52 @@ class LookupEventGroup(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        lookupnames = self.names
-        chainsnames = [[]]
-        if "name" in eventgroup:
-            chainsnames = eventgroup["name"]
-            sport_id = eventgroup["sport_id"]
-        elif "new_name" in eventgroup:
-            chainsnames = eventgroup["new_name"]
-            sport_id = eventgroup["new_sport_id"]
-        else:
-            raise ValueError
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys([
+                "sport_id", "new_name"
+            ], [
+                "sport_id", "name"
+            ]),
+            comparators.cmp_all_name(),
+            comparators.cmp_sport(),
+        ])
 
-        parts = sport_id.split(".")
-        assert len(parts) == 3,\
-            "{} is a strange sport object id".format(sport_id)
-        if int(parts[0]) == 0:
-            sport_id = ""
-
-        if (all([a in chainsnames for a in lookupnames]) and
-                all([b in lookupnames for b in chainsnames]) and
-                (not sport_id or self.parent.id == sport_id)):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, eventgroup)
+            for func in test_operation_equal_search
+        ]):
             return True
+        return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
         parent_id = self.parent.id
-        if parent_id[0] == "0" or parent_id[:4] == "1.10":
+        if not self.valid_object_id(parent_id):
             return
 
         egs = EventGroups(
             self.parent.id,
             peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+
+        find_id_search = kwargs.get("find_id_search", [
+            comparators.cmp_name("identifier"),
+            comparators.cmp_sport()
+        ])
 
         for eg in egs:
-            if (
-                en_descrp in eg["name"] and
-                self.parent.id == eg["sport_id"]
-            ):
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, eg)
+                for func in find_id_search
+            ]):
                 return eg["id"]
 
     def is_synced(self):
@@ -138,6 +139,12 @@ class LookupEventGroup(Lookup, dict):
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer
         )
+
+    @property
+    def name(self):
+        """ Alias for `name`
+        """
+        return self.names
 
     @property
     def names(self):
@@ -180,3 +187,7 @@ class LookupEventGroup(Lookup, dict):
     @property
     def leadtime_Max(self):
         return self.get("leadtime_Max")
+
+    @property
+    def sport_id(self):
+        return self.parent.id

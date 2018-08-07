@@ -16,111 +16,48 @@ from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.utils import parse_time
 
+from .fixtures import fixture_data, config, lookup_test_event
 
-parent_id = "1.18.0"
-this_id = "1.20.0"
-miniumum_event_dict = {
-    "id": parent_id,
-    "teams": ["Demo", "Foobar"],
-    "eventgroup_identifier": "NFL#PreSeas",
-    "sport_identifier": "AmericanFootball",
-    "season": {"en": "2017-00-00"},
-    "start_time": datetime.datetime.utcnow(),
+event_id = "1.18.2242"
+bmg_id = "1.20.212"
+test_operation_dict = {
+    "id": bmg_id,
+    "description": [["sen", "Moneyline"],
+                    ["en", "Moneyline"],
+                    ["display_name", "Moneyline"]],
+    "event_id": "0.0.0",
+    "rules_id": "1.19.0",
+    "asset_id": "1.3.0",
     "status": "ongoing",
 }
-test_operation_dicts = [
-    {
-        "id": this_id,
-        "description": [["en", "Match Odds"],
-                        ["de", "Gewinn Verhältnis"],
-                        ["display_name", "Match Odds"]],
-        "event_id": "0.0.0",
-        "rules_id": "1.19.0",
-        "asset_id": "1.3.0",
-        "status": "ongoing",
-    }
-]
-additional_objects = dict()
-additional_objects["rules"] = [
-    {
-     'name': [
-         ['en', 'R_NFL_MO_1'],
-     ],
-     'id': '1.19.0',
-     'description': [
-         ['en', 'R_NFL_MO_1'],
-         ['de', 'R_NFL_MO_1'],
-         ['grading', str({
-             'metric': '{result.hometeam} - {result.awayteam}',
-             'resolutions': [{'win': '{metric} > 0',
-                              'not_win': '{metric} <= 0',
-                              'void': 'False'},
-                             {'win': '{metric} < 0',
-                              'not_win': '{metric} >= 0',
-                              'void': 'False'},
-                             {'win': '{metric} == 0',
-                              'not_win': '{metric} != 0',
-                              'void': 'False'}]})
-         ]
-     ]}
-]
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-
-ppy = PeerPlays(
-    nobroadcast=True,
-    wif=[wif]   # ensure we can sign
-)
-set_shared_blockchain_instance(ppy)
 
 
 class Testcases(unittest.TestCase):
 
+    def setUp(self):
+        fixture_data()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        fixture_data()
 
-        Lookup._clear()
-        Lookup(
-            network="unittests",
-            sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
-            ),
-            peerplays_instance=ppy
-        )
-        event = LookupEvent(**miniumum_event_dict)
-        self.lookup = next(event.bettingmarketgroups)
-
-        self.setupCache()
-
-    def setupCache(self):
-        _cache = ObjectCache(default_expiration=60 * 60 * 1, no_overwrite=True)
-        _cache[parent_id] = {"id": parent_id}
-        _cache[miniumum_event_dict["id"]] = miniumum_event_dict
-        for i in test_operation_dicts:
-            _cache[i["id"]] = i
-        for _, j in additional_objects.items():
-            for i in j:
-                _cache[i["id"]] = i
-        BlockchainObject._cache = _cache
-
-        BettingMarketGroups.cache[parent_id] = test_operation_dicts
-        Rules.cache["rules"] = additional_objects["rules"]
+        event = lookup_test_event(event_id)
+        self.lookup = list(event.bettingmarketgroups)[0]  # second BMG is ours
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroup)
 
     def test_test_operation_equal(self):
-        for x in test_operation_dicts:
-            self.assertTrue(self.lookup.test_operation_equal(x))
+        self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
 
         with self.assertRaises(ValueError):
-            self.assertTrue(self.lookup.test_operation_equal({}))
+            self.assertFalse(self.lookup.test_operation_equal({}))
 
     def test_find_id(self):
-        self.assertEqual(self.lookup.find_id(), this_id)
+        self.assertEqual(self.lookup.find_id(), bmg_id)
 
     def test_is_synced(self):
-        self.lookup["id"] = this_id
+        self.lookup["id"] = bmg_id
         self.assertTrue(self.lookup.is_synced())
 
     def test_propose_new(self):
@@ -140,7 +77,7 @@ class Testcases(unittest.TestCase):
     def test_propose_update(self):
         from peerplaysbase.operationids import operations
 
-        self.lookup["id"] = this_id
+        self.lookup["id"] = bmg_id
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_update()
         tx = tx.json()

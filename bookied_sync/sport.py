@@ -5,6 +5,7 @@ from .rule import LookupRules
 from .bettingmarketgroup import LookupBettingMarketGroup
 from .participant import LookupParticipants
 from .exceptions import ObjectNotFoundInLookup
+from . import comparators
 
 
 class LookupSport(Lookup, dict):
@@ -86,30 +87,36 @@ class LookupSport(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        lookupnames = self.names
-        chainsnames = [[]]
-        if "name" in sport:
-            chainsnames = sport["name"]
-        elif "new_name" in sport:
-            chainsnames = sport["new_name"]
-        else:
-            raise ValueError
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys(["new_name"], ["name"]),
+            comparators.cmp_all_name(),
+        ])
 
-        if (all([a in chainsnames for a in lookupnames]) and
-                all([b in lookupnames for b in chainsnames])):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, sport)
+            for func in test_operation_equal_search
+        ]):
             return True
+        return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         sports = Sports(peerplays_instance=self.peerplays)
-        en_descrp = next(filter(lambda x: x[0] == "en", self.names))
+        find_id_search = kwargs.get("find_id_search", [
+            comparators.cmp_name("identifier"),
+        ])
         for sport in sports:
-            if en_descrp in sport["name"]:
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, sport)
+                for func in find_id_search
+            ]):
                 return sport["id"]
 
     def is_synced(self):
@@ -137,6 +144,12 @@ class LookupSport(Lookup, dict):
             names=self.names,
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer)
+
+    @property
+    def name(self):
+        """ Alias for `names`
+        """
+        return self.names
 
     @property
     def names(self):

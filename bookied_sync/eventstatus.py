@@ -6,21 +6,6 @@ from peerplays.utils import formatTime, parse_time
 # from . import log
 
 
-def subsitution(teams, scheme):
-    class Teams:
-        home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
-        away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
-
-    ret = dict()
-    for lang, name in scheme.items():
-        ret[lang] = name.format(
-            teams=Teams
-        )
-    return ret
-
-
 class LookupEventStatus(Lookup, dict):
     """ Lookup Class for an Event
 
@@ -33,7 +18,7 @@ class LookupEventStatus(Lookup, dict):
         :param dict extra_data: Optionally provide additional data that is
                stored in the same dictionary
 
-        ... note:: Please note that the list of teams begins with the **home**
+        .. note:: Please note that the list of teams begins with the **home**
                    team! Only two teams per event are supported!
     """
 
