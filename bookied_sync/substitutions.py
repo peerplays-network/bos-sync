@@ -61,7 +61,7 @@ class Handicaps:
         self.away_score_int = int(self.home) if int(self.home) >= 0 else 0
 
         # Defaults to integer
-        if kwargs.get("handicap_allow_float", False):
+        if kwargs.get("handicap_allow_float", True):
             self.home_score = self.home_score_float
             self.away_score = self.away_score_float
         else:

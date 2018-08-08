@@ -39,6 +39,10 @@ class Testcases(unittest.TestCase):
 
         self.event = lookup_test_event(event_id)
         self.lookup = list(self.event.bettingmarketgroups)[1]
+
+        # Set the variable that disallows for float handicaps
+        self.lookup["dynamic_allow_float"] = False
+
         self.lookup.set_handicaps(home=1)
 
     def test_init(self):
