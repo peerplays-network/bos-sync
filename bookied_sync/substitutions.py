@@ -54,8 +54,19 @@ class Handicaps:
         self.away = handicaps[1]
 
         # The other team has the advantage in the 'score'
-        self.home_score = int(self.away) if int(self.away) >= 0 else 0
-        self.away_score = int(self.home) if int(self.home) >= 0 else 0
+        self.home_score_float = float(self.away) if float(self.away) >= 0 else 0
+        self.away_score_float = float(self.home) if float(self.home) >= 0 else 0
+
+        self.home_score_int = int(self.away) if int(self.away) >= 0 else 0
+        self.away_score_int = int(self.home) if int(self.home) >= 0 else 0
+
+        # Defaults to integer
+        if kwargs.get("handicap_allow_float", False):
+            self.home_score = self.home_score_float
+            self.away_score = self.away_score_float
+        else:
+            self.home_score = self.home_score_int
+            self.away_score = self.away_score_int
 
 
 class OverUnder:

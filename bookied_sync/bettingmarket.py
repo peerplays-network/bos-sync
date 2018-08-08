@@ -6,6 +6,7 @@ from peerplays.bettingmarket import (
     BettingMarket, BettingMarkets)
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup, BettingMarketGroups)
+from . import comparators
 
 
 class LookupBettingMarket(Lookup, dict):
@@ -57,11 +58,16 @@ class LookupBettingMarket(Lookup, dict):
             has the same content as an object in the  lookup
         """
         test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            # We compare only the 'eng' content by default
-            LookupBettingMarket.cmp_required_keys(),
-            LookupBettingMarket.cmp_status(),
-            LookupBettingMarket.cmp_group(),
-            LookupBettingMarket.cmp_all_description()
+            comparators.cmp_required_keys([
+                "new_group_id", "new_description",
+                "betting_market_id"
+            ], [
+                "group_id", "description",
+                "betting_market_id"
+            ]),
+            comparators.cmp_status(),
+            comparators.cmp_group(),
+            comparators.cmp_all_description()
         ])
 
         """ We need to properly deal with the fact that betting markets
@@ -90,7 +96,7 @@ class LookupBettingMarket(Lookup, dict):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the
+            .. note:: This only checks if a sport exists with the
                         same description in **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
@@ -105,9 +111,7 @@ class LookupBettingMarket(Lookup, dict):
 
         find_id_search = kwargs.get("find_id_search", [
             # We compare only the 'eng' content by default
-            # 'x' will be the Lookup
-            # 'y' will be the content of the on-chain Object!
-            LookupBettingMarket.cmp_description("en"),
+            comparators.cmp_description("en"),
         ])
 
         for bm in bms:
@@ -161,64 +165,3 @@ class LookupBettingMarket(Lookup, dict):
                 v.format(**self)   # replace variables
             ] for k, v in self["description"].items()
         ]
-
-    @staticmethod
-    def cmp_description(key="en"):
-        """ This method simply compares the a given description key
-            (e.g. 'en')
-        """
-        def cmp(soll, ist):
-            ist_description = ist.get("description", ist.get("new_description"))
-            if not ist_description:
-                return False
-
-            return [key, soll.description_json.get(key)] in ist_description
-
-        return cmp
-
-    @staticmethod
-    def cmp_all_description():
-        def cmp(soll, ist):
-            lookupdescr = soll.description
-            chainsdescr = ist.get("description", ist.get("new_description"))
-            return (
-                (bool(chainsdescr) and bool(lookupdescr)) and
-                all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr])
-            )
-        return cmp
-
-    @staticmethod
-    def cmp_required_keys():
-        def cmp(soll, ist):
-            def is_update(bm):
-                return any([x in bm for x in [
-                    "new_group_id", "new_description",
-                    "betting_market_id"]])
-
-            def is_create(bm):
-                return any([x in bm for x in [
-                    "group_id", "description"]])
-
-            if not is_create(ist) and not is_update(ist):
-                raise ValueError
-            return is_update(ist) or is_create(ist)
-        return cmp
-
-    @staticmethod
-    def cmp_status():
-        def cmp(soll, ist):
-            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
-        return cmp
-
-    @staticmethod
-    def cmp_group():
-        def cmp(soll, ist):
-            group_id = ist.get("group_id", ist.get("new_group_id"))
-            test_group = soll.valid_object_id(group_id)
-            return (not test_group or ist.get("group_id", ist.get("new_group_id")) == soll.group.id)
-        return cmp
-
-    @property
-    def description_json(self):
-        return dList2Dict(self.description)

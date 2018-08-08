@@ -3,6 +3,7 @@ from .rule import LookupRules
 from peerplays.bettingmarketgroup import (
     BettingMarketGroup
 )
+from bookied_sync.utils import dList2Dict
 from peerplays.rule import Rule
 from .substitutions import substitute_metric
 
@@ -10,7 +11,7 @@ from .substitutions import substitute_metric
 class LookupBettingMarketGroupResolve(Lookup, dict):
     """ Lookup Class for Resolving BettingMarketGroups
 
-        ... note:: If ``result`` is a dictionary, then first element is
+        .. note:: If ``result`` is a dictionary, then first element is
             ``homeTeam`` and second is ``awayTeam``.
     """
 
@@ -27,7 +28,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
     ):
         Lookup.__init__(self)
         self.identifier = "{}::resolution".format(
-            bmg.description_json["en"],
+            dList2Dict(bmg.description)["en"],
         )
         self.parent = bmg
         dict.__init__(self, extra_data)
@@ -42,6 +43,28 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             handicaps=handicaps,
             overunder=overunder
         ))
+
+        # We here direct the handicaps and overunders through BettingMarket
+        # Group of the parent and load it from there again to allow
+        # modifications according to set_*()
+        if overunder:
+            self.parent.set_overunder(overunder)
+            self["overunder"] = self.parent["overunder"]
+
+        if handicaps:
+            self.parent.set_handicaps(
+                home=handicaps[0],
+                away=handicaps[1]
+            )
+            self["handicaps"] = self.parent["handicaps"]
+
+    @property
+    def overunder(self):
+        return self.parent["overunder"]
+
+    @property
+    def handicaps(self):
+        return self.parent["handicaps"]
 
     @property
     def bmg(self):
@@ -81,7 +104,8 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             self.grading.get("metric", ""),
             result=self["result"],
             handicaps=self["handicaps"],
-            overunder=self["overunder"]
+            overunder=self["overunder"],
+            handicap_allow_float=self.parent.allow_float
         )
 
     def _equation(self, eq):
@@ -90,7 +114,8 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             metric=self.metric,
             result=self["result"],
             handicaps=self["handicaps"],
-            overunder=self["overunder"]
+            overunder=self["overunder"],
+            handicap_allow_float=self.parent.allow_float
         )
 
     @property

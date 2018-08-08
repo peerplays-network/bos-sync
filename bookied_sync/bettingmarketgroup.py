@@ -8,7 +8,7 @@ from peerplays.rule import Rule
 from peerplays.asset import Asset
 from peerplays.bettingmarketgroup import (
     BettingMarketGroups, BettingMarketGroup)
-from . import log
+from . import log, comparators
 from .substitutions import substitute_bettingmarket_name
 
 
@@ -57,8 +57,8 @@ class LookupBettingMarketGroup(Lookup, dict):
                     )
                 )
         self.identifier = "{}/{}".format(
-            event.names_json["en"],
-            self.description_json["en"]
+            dList2Dict(event.names)["en"],
+            dList2Dict(self.description)["en"]
         )
 
     @property
@@ -79,11 +79,16 @@ class LookupBettingMarketGroup(Lookup, dict):
             has the same content as an object in the  lookup
         """
         test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            # We compare only the 'eng' content by default
-            LookupBettingMarketGroup.cmp_required_keys(),
-            LookupBettingMarketGroup.cmp_status(),
-            LookupBettingMarketGroup.cmp_event(),
-            LookupBettingMarketGroup.cmp_all_description()
+            comparators.cmp_required_keys([
+                "betting_market_group_id", "new_description",
+                "new_event_id", "new_rules_id"
+            ], [
+                "betting_market_group_id", "description",
+                "event_id", "rules_id"
+            ]),
+            comparators.cmp_status(),
+            comparators.cmp_event(),
+            comparators.cmp_all_description()
         ])
 
         """ We need to properly deal with the fact that betting market groups
@@ -122,7 +127,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
@@ -137,11 +142,8 @@ class LookupBettingMarketGroup(Lookup, dict):
 
         find_id_search = kwargs.get("find_id_search", [
             # We compare only the 'eng' content by default
-            # 'x' will be the Lookup
-            # 'y' will be the content of the on-chain Object!
-            LookupBettingMarketGroup.cmp_description("en"),
+            comparators.cmp_description("en"),
         ])
-
 
         for bmg in bmgs:
             if all([
@@ -215,7 +217,8 @@ class LookupBettingMarketGroup(Lookup, dict):
                 market["description"],
                 teams=self.event["teams"],
                 handicaps=self.get("handicaps"),
-                overunder=self.get("overunder")
+                overunder=self.get("overunder"),
+                handicap_allow_float=self.allow_float
             )
 
             # Yield one Lookup per betting market
@@ -242,7 +245,8 @@ class LookupBettingMarketGroup(Lookup, dict):
             self["description"],
             teams=self.event["teams"],
             handicaps=self.get("handicaps"),
-            overunder=self.get("overunder")
+            overunder=self.get("overunder"),
+            handicap_allow_float=self.allow_float
         )
         if self.get("dynamic") == "hc":
             description["_dynamic"] = "hc"
@@ -260,169 +264,46 @@ class LookupBettingMarketGroup(Lookup, dict):
             ] for k, v in description.items()
         ]
 
-    @property
-    def description_json(self):
-        return dList2Dict(self.description)
-
     def set_overunder(self, ou):
         self["overunder"] = math.floor(float(ou)) + 0.5
 
+    @property
+    def allow_float(self):
+        """ This attribute is used to switch between integer and float
+            handicaps. The difference is that in case of interger, the
+            marketgroup might need a 'draw' market as well
+        """
+        return self.get("dynamic_allow_float", False)
+
     def set_handicaps(self, home=None, away=None):
-        if away is not None and home is None:
-            home = -int(away)
-        if away is None and home is not None:
-            away = -int(home)
-        self["handicaps"] = [home, away]
+        """ This sets symmetric values for "home" and "away". Hence, the
+            handicaps are individual to their correspoending team.
 
-    @staticmethod
-    def cmp_fuzzy(spread=1):
-        """ This method returns a method!
+            home team with handicap of +1 is equivalent with away team with handicap -1
 
-            It is used to obtain a compare method that contains a given
-            'spread' (allowed threshold) around a center as provide by the
-            Lookup
+            Hence, the list would be [+1, -1] and has to always be symmetric
         """
-        def cmp(soll, ist):
-            def in_range(x, center):
-                x = float(x)
-                center = float(center)
-                return x >= center - spread and x <= center + spread
-
-            ist_description = ist.get("description", ist.get("new_description"))
-            if not ist_description:
-                return False
-
-            self_description = soll.description_json
-            description = dList2Dict(ist_description)
-            if "_dynamic" not in self_description or "_dynamic" not in description:
-                return False
-
-            if self_description["_dynamic"].lower() != description["_dynamic"]:
-                return False
-
-            # Handicap ##########################
-            if self_description["_dynamic"].lower() == "hc":
-                assert "_hca" in self_description and \
-                    "_hch" in self_description and \
-                    "_hca" in description and \
-                    "_hch" in description, \
-                    "dynamic betting market is missing _hca or _hch"
-
-                # Need the handicap of home and away to match fuzzy
-                if (
-                    in_range(description["_hch"], self_description["_hch"]) and
-                    in_range(description["_hca"], self_description["_hca"])
-                ):
-                    return True
-
-            # Overunder #########################
-            elif self_description["_dynamic"].lower() == "ou":
-                assert "_ou" in self_description and \
-                    "_ou" in description, \
-                    "dynamic betting market is missing _overunder"
-                return in_range(
-                    description["_ou"],
-                    self_description["_ou"]
-                )
-
+        if (home is None and away is not None) or float(home) == 0.0:
+            if self.allow_float:
+                away = math.copysign(math.floor(math.fabs(float(away))) + 0.5, float(away))
             else:
-                raise
-        # Return the new cmp function that contains the 'spread'
-        return cmp
+                away = float(away)
 
-    @staticmethod
-    def cmp_description(key="en"):
-        """ This method simply compares the a given description key
-            (e.g. 'en')
-        """
-        def cmp(soll, ist):
-            ist_description = ist.get("description", ist.get("new_description"))
-            if not ist_description:
-                return False
+            home = -away   # Symmetry
 
-            return [key, soll.description_json.get(key)] in ist_description
+        elif (away is None and home is not None) or float(away) == 0.0:
+            away = 0
+            if self.allow_float:
+                home = math.copysign(math.floor(math.fabs(float(home))) + 0.5, float(home))
+            else:
+                home = int(float(home))
 
-        return cmp
+            away = -home  # Symmetry
 
-    @staticmethod
-    def cmp_descriptions(key=["en"]):
-        """ This method simply compares the a given description key
-            (e.g. 'en')
-        """
-        def cmp(soll, ist):
-            ist_description = ist.get("description", ist.get("new_description"))
-            if not ist_description:
-                return False
-            return all([
-                bool([k, soll.description_json.get(k)] in ist_description)
-                for k in key
-            ])
+        else:
+            raise
 
-        return cmp
-
-    @staticmethod
-    def cmp_external_descriptions():
-        return LookupBettingMarketGroup.cmp_descriptions_key_lambda(lambda x: x[0] != "_")
-
-    @staticmethod
-    def cmp_descriptions_key_lambda(f):
-        """ This method simply compares the a given description key
-            (e.g. 'en')
-        """
-        def cmp(soll, ist):
-            ist_description = ist.get("description", ist.get("new_description"))
-            if not ist_description:
-                return False
-
-            keys = filter(f, dList2Dict(ist_description).keys())
-            return all([
-                bool([k, soll.description_json.get(k)] in ist_description)
-                for k in keys
-            ])
-
-        return cmp
-
-    @staticmethod
-    def cmp_all_description():
-        def cmp(soll, ist):
-            lookupdescr = soll.description
-            chainsdescr = ist.get("description", ist.get("new_description"))
-            return (
-                (bool(chainsdescr) and bool(lookupdescr)) and
-                all([a in chainsdescr for a in lookupdescr]) and
-                all([b in lookupdescr for b in chainsdescr])
-            )
-        return cmp
-
-    @staticmethod
-    def cmp_required_keys():
-        def cmp(soll, ist):
-            def is_update(bmg):
-                return any([x in bmg for x in [
-                    "betting_market_group_id", "new_description",
-                    "new_event_id", "new_rules_id"]])
-
-            def is_create(bmg):
-                return any([x in bmg for x in [
-                    "description", "event_id", "rules_id"]])
-            if not is_update(ist) and not is_create(ist):
-                raise ValueError
-            return is_update(ist) or is_create(ist)
-        return cmp
-
-    @staticmethod
-    def cmp_status():
-        def cmp(soll, ist):
-            return (not bool(soll.get("status")) or ist.get("status") == soll.get("status"))
-        return cmp
-
-    @staticmethod
-    def cmp_event():
-        def cmp(soll, ist):
-            event_id = ist.get("event_id", ist.get("new_event_id"))
-            test_event = soll.valid_object_id(event_id, Event)
-            return (not test_event or ist.get("event_id", ist.get("new_event_id")) == soll.event.id)
-        return cmp
+        self["handicaps"] = [home, away]
 
     @staticmethod
     def is_dynamic_type(x, typ):
@@ -440,7 +321,7 @@ class LookupBettingMarketGroup(Lookup, dict):
         return x == "ou"
 
     def is_dynamic(self, operation):
-        if not "description" in operation:
+        if "description" not in operation:
             return False
         description = dList2Dict(operation["description"])
         return "_dynamic" in description

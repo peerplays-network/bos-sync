@@ -7,14 +7,16 @@ from peerplays.event import Event, Events
 from peerplays.utils import formatTime
 from peerplays.utils import parse_time
 # from . import log
+from . import comparators
+from .utils import dList2Dict
 
 
 def substitution(teams, scheme):
     class Teams:
         home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
+            x for x in teams[0].split(" ")])
         away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
+            x for x in teams[1].split(" ")])
 
     ret = dict()
     for lang, name in scheme.items():
@@ -36,7 +38,7 @@ class LookupEvent(Lookup, dict):
         :param dict extra_data: Optionally provide additional data that is
                stored in the same dictionary
 
-        ... note:: Please note that the list of teams begins with the **home**
+        .. note:: Please note that the list of teams begins with the **home**
                    team! Only two teams per event are supported!
     """
 
@@ -103,7 +105,7 @@ class LookupEvent(Lookup, dict):
                     str(self["teams"])))
 
         # Initialize name key
-        dict.update(self, dict(name=self.names_json))
+        dict.update(self, dict(name=dList2Dict(self.names)))
 
     def test_teams_valid(self):
         return all(
@@ -158,7 +160,7 @@ class LookupEvent(Lookup, dict):
     def teams(self):
         """ Return the list of teams
 
-            ... note:: The first element is the **home** team!
+            .. note:: The first element is the **home** team!
 
         """
         return self["teams"]
@@ -176,51 +178,33 @@ class LookupEvent(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        lookupnames = self.names
-        lookupseason = self.season
-        chainsnames = [[]]
-        chainseason = [[]]
-        if "name" in event:
-            chainsnames = event["name"]
-            event_group_id = event["event_group_id"]
-            chainseason = event["season"]
-            status = event.get("status")
-            start_time = event.get("start_time")
-        elif "new_name" in event:
-            chainsnames = event.get("new_name")
-            event_group_id = event.get("new_sport_id")
-            chainseason = event.get("new_season")
-            status = event.get("new_status")
-            start_time = event.get("new_start_time")
-        else:
-            raise ValueError
 
-        if isinstance(start_time, str):
-            start_time = parse_time(start_time)
+        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
+            comparators.cmp_required_keys([
+                "event_group_id", "new_name", "new_status"
+            ], [
+                "event_group_id", "name", "status"
+            ]),
+            comparators.cmp_all_name(),
+            comparators.cmp_status(),
+            comparators.cmp_season(),
+            comparators.cmp_start_time(),
+            comparators.cmp_event_group(),
+        ])
 
-        test_status = self.get("status") and event.get("status")
-        test_season = False  # bool(lookupseason) and bool(chainseason)
-        test_start_time = self.get("start_time") and event.get("start_time")
-
-        test_event_group_id = self.valid_object_id(event_group_id)
-
-        if (
-            all([a in chainsnames for a in lookupnames]) and
-            all([b in lookupnames for b in chainsnames]) and
-            (not test_season or  # only test if a season is provided
-                all([b in lookupseason for b in chainseason]) and
-                all([b in chainseason for b in lookupseason])) and
-            (not test_event_group_id or self.parent_id == event_group_id) and
-            (not test_status or status == self.get("status")) and
-            (not test_start_time or start_time == self.get("start_time"))
-        ):
+        if all([
+            # compare by using 'all' the funcs in find_id_search
+            func(self, event)
+            for func in test_operation_equal_search
+        ]):
             return True
+        return False
 
-    def find_id(self):
+    def find_id(self, **kwargs):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         # In case the parent is a proposal, we won't
@@ -233,16 +217,18 @@ class LookupEvent(Lookup, dict):
             self.parent_id,
             peerplays_instance=self.peerplays)
 
-        en_descrp = next(filter(lambda x: x[0] == "en", self.names))
-        start_time = self.get("start_time")
-        event_group_id = self.get("event_group_id")
+        find_id_search = kwargs.get("find_id_search", [
+            comparators.cmp_name("en"),
+            comparators.cmp_start_time(),
+            comparators.cmp_event_group()
+        ])
 
         for event in events:
-            if (
-                en_descrp in event["name"] and
-                formatTime(start_time) == event["start_time"] and
-                event_group_id == event["event_group_id"]
-            ):
+            if all([
+                # compare by using 'all' the funcs in find_id_search
+                func(self, event)
+                for func in find_id_search
+            ]):
                 return event["id"]
 
     def is_synced(self):
@@ -297,26 +283,24 @@ class LookupEvent(Lookup, dict):
             yield self.eventgroup.sport["bettingmarketgroups"][name]
 
     @property
+    def name(self):
+        """ Alias for `names`
+        """
+        return self.names
+
+    @property
     def names(self):
         """ Properly format names for internal use
         """
+        teams = self["teams"]
+        scheme = self.eventscheme.get("name", {})
+        items = substitution(teams, scheme)
         return [
             [
                 k,
                 v
-            ] for k, v in self.names_json.items()
+            ] for k, v in items.items()
         ]
-
-    @property
-    def names_json(self):
-        """ This property derives the names for each language provided in the
-            eventscheme and fills in the variables.
-
-            :rtype dict
-        """
-        teams = self["teams"]
-        scheme = self.eventscheme.get("name", {})
-        return substitution(teams, scheme)
 
     @property
     def season(self):

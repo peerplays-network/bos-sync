@@ -577,13 +577,12 @@ class Lookup(dict, BlockchainInstance):
 
             If fetch fails, exception is raised.
 
-            ... note:: The object id must *not* be a proposal (1.10.x)
+            .. note:: The object id must *not* be a proposal (1.10.x)
         """
         test = (id and id[0] == "1" and id[:4] != "1.10")
         if test and fetch:
             fetch(id)
         return test
-
 
     # Prototypes #############################################################
     def test_operation_equal(self, sport, **kwargs):
@@ -596,7 +595,7 @@ class Lookup(dict, BlockchainInstance):
         """ Try to find an id for the object of the  lookup on the
             blockchain
 
-            ... note:: This only checks if a sport exists with the same name in
+            .. note:: This only checks if a sport exists with the same name in
                        **ENGLISH**!
         """
         pass
