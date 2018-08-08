@@ -44,6 +44,28 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             overunder=overunder
         ))
 
+        # We here direct the handicaps and overunders through BettingMarket
+        # Group of the parent and load it from there again to allow
+        # modifications according to set_*()
+        if overunder:
+            self.parent.set_overunder(overunder)
+            self["overunder"] = self.parent["overunder"]
+
+        if handicaps:
+            self.parent.set_handicaps(
+                home=handicaps[0],
+                away=handicaps[1]
+            )
+            self["handicaps"] = self.parent["handicaps"]
+
+    @property
+    def overunder(self):
+        return self.parent["overunder"]
+
+    @property
+    def handicaps(self):
+        return self.parent["handicaps"]
+
     @property
     def bmg(self):
         """ The BMG is the parent
@@ -82,7 +104,8 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             self.grading.get("metric", ""),
             result=self["result"],
             handicaps=self["handicaps"],
-            overunder=self["overunder"]
+            overunder=self["overunder"],
+            handicap_allow_float=self.parent.allow_float
         )
 
     def _equation(self, eq):
@@ -91,7 +114,8 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             metric=self.metric,
             result=self["result"],
             handicaps=self["handicaps"],
-            overunder=self["overunder"]
+            overunder=self["overunder"],
+            handicap_allow_float=self.parent.allow_float
         )
 
     @property

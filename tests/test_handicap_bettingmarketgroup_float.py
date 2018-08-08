@@ -10,16 +10,16 @@ from bookied_sync.bettingmarketgroupresolve import (
 from .fixtures import fixture_data, config, lookup_test_event
 
 event_id = "1.18.2242"
-bmg_id = "1.20.213"
+bmg_id = "1.20.300"
 test_operation_dict = {
     "id": bmg_id,
     "description": [
-        ["display_name", "HC (0:1)"],
-        ["en", "Handicap (0:1)"],
-        ["sen", "Handicap (0:1)"],
+        ["display_name", "HC (0:1.5)"],
+        ["en", "Handicap (0:1.5)"],
+        ["sen", "Handicap (0:1.5)"],
         ["_dynamic", "hc"],
-        ["_hch", "1"],
-        ["_hca", "-1"]
+        ["_hch", "1.5"],
+        ["_hca", "-1.5"]
     ],
     "event_id": "0.0.0",
     "rules_id": "1.19.10",
@@ -39,17 +39,22 @@ class Testcases(unittest.TestCase):
 
         self.event = lookup_test_event(event_id)
         self.lookup = list(self.event.bettingmarketgroups)[1]
-        self.lookup.set_handicaps(home=1)
+
+        # Set the variable that allows for float handicaps
+        self.lookup["dynamic_allow_float"] = True
+
+        # Let's now set the handicap
+        self.lookup.set_handicaps(home=1.5)
 
     def test_init(self):
         self.assertIsInstance(self.lookup, LookupBettingMarketGroup)
 
     def test_set_handicap(self):
-        self.assertEqual(self.lookup["handicaps"], [1, -1])
+        self.assertEqual(self.lookup["handicaps"], [1.5, -1.5])
 
     def test_bmg_names(self):
         self.assertIn(
-            ['en', 'Handicap (0:1)'],
+            ['en', 'Handicap (0:1.5)'],
             self.lookup.description
         )
 
@@ -57,9 +62,9 @@ class Testcases(unittest.TestCase):
         bms = list(self.lookup.bettingmarkets)
         names_home = bms[0].description
         names_away = bms[1].description
-        self.assertIn(['en', 'Atlanta Hawks (1)'], names_home)
+        self.assertIn(['en', 'Atlanta Hawks (1.5)'], names_home)
         # self.assertIn(['handicap', '1'], names_home)
-        self.assertIn(['en', 'Boston Celtics (-1)'], names_away)
+        self.assertIn(['en', 'Boston Celtics (-1.5)'], names_away)
         # self.assertIn(['handicap', '-1'], names_away)
 
     def test_test_operation_equal(self):
@@ -114,49 +119,52 @@ class Testcases(unittest.TestCase):
         resolve = LookupBettingMarketGroupResolve(
             self.lookup, [0, 0], handicaps=[1, 0]
         )
-        self.assertEqual(resolve.bmg["handicaps"], [1, -1])
-        self.assertEqual(resolve._metric, '(0 + 0) - (0 + 1)')
-        self.assertEqual(resolve.metric, -1)
+        self.assertEqual(resolve.bmg["handicaps"], [1.5, -1.5])
+        self.assertEqual(resolve._metric, '(0 + 0) - (0 + 1.5)')
+        self.assertEqual(resolve.metric, -1.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'win']
+            ['1.21.3000', 'not_win'],
+            ['1.21.3001', 'win']
         )
 
     def test_result_01_on_10(self):
         resolve = LookupBettingMarketGroupResolve(
             self.lookup, [0, 1], handicaps=[1, 0]
         )
-        self.assertEqual(resolve._metric, '(0 + 0) - (1 + 1)')
-        self.assertEqual(resolve.metric, -2)
+        self.assertEqual(resolve.bmg["handicaps"], [1.5, -1.5])
+        self.assertEqual(resolve._metric, '(0 + 0) - (1 + 1.5)')
+        self.assertEqual(resolve.metric, -2.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'win']
+            ['1.21.3000', 'not_win'],
+            ['1.21.3001', 'win']
         )
 
     def test_result_10_on_10(self):
         resolve = LookupBettingMarketGroupResolve(
             self.lookup, [1, 0], handicaps=[1, 0]
         )
-        self.assertEqual(resolve._metric, '(1 + 0) - (0 + 1)')
-        self.assertEqual(resolve.metric, 0)
+        self.assertEqual(resolve.bmg["handicaps"], [1.5, -1.5])
+        self.assertEqual(resolve._metric, '(1 + 0) - (0 + 1.5)')
+        self.assertEqual(resolve.metric, -0.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'not_win'],
-            ['1.21.2953', 'not_win']
+            ['1.21.3000', 'not_win'],
+            ['1.21.3001', 'win']
         )
 
     def test_result_20_on_10(self):
         resolve = LookupBettingMarketGroupResolve(
             self.lookup, [2, 0], handicaps=[1, 0]
         )
-        self.assertEqual(resolve._metric, '(2 + 0) - (0 + 1)')
-        self.assertEqual(resolve.metric, 1)
+        self.assertEqual(resolve.bmg["handicaps"], [1.5, -1.5])
+        self.assertEqual(resolve._metric, '(2 + 0) - (0 + 1.5)')
+        self.assertEqual(resolve.metric, 0.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2952', 'win'],
-            ['1.21.2953', 'not_win']
+            ['1.21.3000', 'win'],
+            ['1.21.3001', 'not_win']
         )
 
     def test_result_00_on_20(self):
@@ -164,12 +172,13 @@ class Testcases(unittest.TestCase):
         resolve = LookupBettingMarketGroupResolve(
             self.lookup, [0, 0], handicaps=[2, 0]
         )
-        self.assertEqual(resolve._metric, '(0 + 0) - (0 + 2)')
-        self.assertEqual(resolve.metric, -2)
+        self.assertEqual(resolve.bmg["handicaps"], [2.5, -2.5])
+        self.assertEqual(resolve._metric, '(0 + 0) - (0 + 2.5)')
+        self.assertEqual(resolve.metric, -2.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2954', 'not_win'],
-            ['1.21.2955', 'win']
+            ['1.21.3002', 'not_win'],
+            ['1.21.3003', 'win']
         )
 
     def test_find_fuzzy_market(self):
@@ -179,15 +188,15 @@ class Testcases(unittest.TestCase):
             find_id_search=[
                 lambda x, y: ["en", dList2Dict(x.description)["en"]] in y["description"],
             ]
-        ), "1.20.220")
+        ), "1.20.301")
 
         self.assertEqual(self.lookup.find_id(
             find_id_search=[
-                comparators.cmp_fuzzy(0),
+                comparators.cmp_fuzzy(.5),
             ]
         ), "1.20.220")
 
-        self.lookup.set_handicaps(home=6.5)
+        self.lookup.set_handicaps(home=6)
         self.assertFalse(self.lookup.find_id(
             find_id_search=[
                 comparators.cmp_fuzzy(0),
@@ -196,19 +205,19 @@ class Testcases(unittest.TestCase):
 
         self.assertFalse(self.lookup.find_id(
             find_id_search=[
-                comparators.cmp_fuzzy(.49),
+                comparators.cmp_fuzzy(.99),
             ]
         ))
 
         self.assertTrue(self.lookup.find_id(
             find_id_search=[
-                comparators.cmp_fuzzy(.5),
+                comparators.cmp_fuzzy(1.1),
             ]
         ))
 
         self.assertTrue(self.lookup.find_id(
             find_id_search=[
-                comparators.cmp_fuzzy(.51),
+                comparators.cmp_fuzzy(1.01),
             ]
         ))
 
@@ -228,7 +237,7 @@ class Testcases(unittest.TestCase):
         )
         t2 = deepcopy(test_operation_dict)
         t2["description"] = [
-            ["en", "Handicap (0:1)"],
+            ["en", "Handicap (0:1.5)"],
         ]
         self.assertFalse(
             self.lookup.test_operation_equal(

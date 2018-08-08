@@ -217,7 +217,8 @@ class LookupBettingMarketGroup(Lookup, dict):
                 market["description"],
                 teams=self.event["teams"],
                 handicaps=self.get("handicaps"),
-                overunder=self.get("overunder")
+                overunder=self.get("overunder"),
+                handicap_allow_float=self.allow_float
             )
 
             # Yield one Lookup per betting market
@@ -244,7 +245,8 @@ class LookupBettingMarketGroup(Lookup, dict):
             self["description"],
             teams=self.event["teams"],
             handicaps=self.get("handicaps"),
-            overunder=self.get("overunder")
+            overunder=self.get("overunder"),
+            handicap_allow_float=self.allow_float
         )
         if self.get("dynamic") == "hc":
             description["_dynamic"] = "hc"
@@ -265,21 +267,42 @@ class LookupBettingMarketGroup(Lookup, dict):
     def set_overunder(self, ou):
         self["overunder"] = math.floor(float(ou)) + 0.5
 
+    @property
+    def allow_float(self):
+        """ This attribute is used to switch between integer and float
+            handicaps. The difference is that in case of interger, the
+            marketgroup might need a 'draw' market as well
+        """
+        return self.get("dynamic_allow_float", False)
+
     def set_handicaps(self, home=None, away=None):
-        if home is not None:
-            if float(home) == 0.0:
-                home = -0.5
-            else:
-                home = math.copysign(math.floor(math.fabs(float(home))) + 0.5, float(home))
-        if away is not None:
-            if float(home) == 0.0:
-                away = -0.5
-            else:
+        """ This sets symmetric values for "home" and "away". Hence, the
+            handicaps are individual to their correspoending team.
+
+            home team with handicap of +1 is equivalent with away team with handicap -1
+
+            Hence, the list would be [+1, -1] and has to always be symmetric
+        """
+        if (home is None and away is not None) or float(home) == 0.0:
+            if self.allow_float:
                 away = math.copysign(math.floor(math.fabs(float(away))) + 0.5, float(away))
-        if away is not None and home is None:
-            home = -away
-        if away is None and home is not None:
-            away = -home
+            else:
+                away = float(away)
+
+            home = -away   # Symmetry
+
+        elif (away is None and home is not None) or float(away) == 0.0:
+            away = 0
+            if self.allow_float:
+                home = math.copysign(math.floor(math.fabs(float(home))) + 0.5, float(home))
+            else:
+                home = int(float(home))
+
+            away = -home  # Symmetry
+
+        else:
+            raise
+
         self["handicaps"] = [home, away]
 
     @staticmethod
