@@ -273,7 +273,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             handicaps. The difference is that in case of interger, the
             marketgroup might need a 'draw' market as well
         """
-        return self.get("dynamic_allow_float", False)
+        return self.get("dynamic_allow_float", True)
 
     def set_handicaps(self, home=None, away=None):
         """ This sets symmetric values for "home" and "away". Hence, the

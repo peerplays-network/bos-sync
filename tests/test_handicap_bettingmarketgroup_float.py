@@ -41,7 +41,7 @@ class Testcases(unittest.TestCase):
         self.lookup = list(self.event.bettingmarketgroups)[1]
 
         # Set the variable that allows for float handicaps
-        self.lookup["dynamic_allow_float"] = True
+        # self.lookup["dynamic_allow_float"] = True
 
         # Let's now set the handicap
         self.lookup.set_handicaps(home=1.5)
