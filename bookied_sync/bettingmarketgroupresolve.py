@@ -51,7 +51,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             self.parent.set_overunder(overunder)
             self["overunder"] = self.parent["overunder"]
 
-        if handicaps:
+        if any(handicaps):
             self.parent.set_handicaps(
                 home=handicaps[0],
                 away=handicaps[1]

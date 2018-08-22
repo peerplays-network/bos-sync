@@ -247,7 +247,7 @@ class Lookup(dict, BlockchainInstance):
                 retriggered keyword.
             """
             log.info("Update() has been retriggered!")
-            kwargs = self._retriggered_kwargs
+            kwargs.update(self._retriggered_kwargs)
         else:
             self._retriggered_kwargs = kwargs
 
