@@ -6,6 +6,7 @@ from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.storage import configStorage as config
 from peerplays.witness import Witnesses
+from peerplaysapi.exceptions import OperationInProposalExistsException
 from .exceptions import ObjectNotFoundError
 from .update import UpdateTransaction
 from bookiesports import BookieSports
@@ -112,6 +113,13 @@ class Lookup(dict, BlockchainInstance):
             assert sports_chain_id == "*" or sports_chain_id == node_chain_id, "You are connecting to {} while network {} requires {}".format(
                 node_chain_id, network, sports_chain_id
             )
+
+        # This variable tracks internal retriggers.
+        # Internal retriggers are used when the backend claims an operation
+        # exists already. Then, we will call update() again which might cause
+        # recursion. To prevent that, we only allow retriggers **once**.
+        self._retriggered = False
+        self._retriggered_kwargs = dict()
 
     # Redirect those to object variables to be "static" (singeltons)
     @property
@@ -231,6 +239,18 @@ class Lookup(dict, BlockchainInstance):
                 * if exists proposal for update, approve
                 * if not, create proposal to update
         """
+        if "retriggered" in kwargs:
+            """ Retriggers are used to retry update in case of race confitions.
+                In that case, the backend would throw an exception with a specific
+                type that is caught and results in update() be called again. To
+                prevent recursion and to catch previous **kwargs, we use the
+                retriggered keyword.
+            """
+            log.info("Update() has been retriggered!")
+            kwargs.update(self._retriggered_kwargs)
+        else:
+            self._retriggered_kwargs = kwargs
+
         # See if  lookup already has an id
         if "id" not in self or not self["id"]:
 
@@ -266,8 +286,14 @@ class Lookup(dict, BlockchainInstance):
                     log.info((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
+                    log.info("Proposing creation of object")
                     try:
-                        self.propose_new()
+                        log.info(self.propose_new())
+                    except OperationInProposalExistsException as e:
+                        if not self._retriggered:
+                            log.info("Failed with DupOp, retriggering ... (propose_new)")
+                            self._retriggered = True
+                            self.update(retriggered=True)
                     except Exception as e:
                         log.critical(
                             "Trying to propose new object but failed: {}".format(str(e))
@@ -302,8 +328,14 @@ class Lookup(dict, BlockchainInstance):
                     self.__class__.__name__,
                     str(self.get("name", ""))
                 ))
+                log.info("Proposing Update of object")
                 try:
-                    self.propose_update()
+                    log.info(self.propose_update())
+                except OperationInProposalExistsException as e:
+                    if not self._retriggered:
+                        log.info("Failed with DupOp, retriggering ... (propose_update)")
+                        self._retriggered = True
+                        self.update(retriggered=True)
                 except Exception as e:
                     log.critical(
                         "Trying to propose an update but failed: {}".format(str(e))
@@ -389,7 +421,8 @@ class Lookup(dict, BlockchainInstance):
                             append_to=Lookup.direct_buffer
                         ))
                     except Exception as e:
-                        log.debug("Proposal Exception: {}".format(str(e)))
+                        log.debug("Exception when approving proposal: {}".format(
+                            str(e)))
                         # Not raising as at this point, the only reason for
                         # this to fail is (probably) for the proposal to be
                         # approved already - in the meantime.

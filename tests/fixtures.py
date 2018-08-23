@@ -49,6 +49,18 @@ BlockchainObject._cache = ObjectCache(
 )
 
 
+def lookup_new_event():
+    return LookupEvent(**{
+        "teams": ["Miami Heat", "New Orleans Pelicans"],
+        "event_group_id": "1.17.12",
+        "eventgroup_identifier": "NBA",
+        "sport_identifier": "Basketball",
+        "season": {"en": "2017-00-00"},
+        "start_time": parse("2022-10-16T00:00:00"),
+        "status": "upcoming"
+    })
+
+
 def lookup_test_event(id):
     event = {
         "id": "1.18.2242",
