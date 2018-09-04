@@ -48,8 +48,8 @@ class LookupEvent(Lookup, dict):
     def __init__(
         self,
         teams,
-        eventgroup_identifier,
-        sport_identifier,
+        eventgroup_identifier,   # not actually required, FIXME cleanup
+        sport_identifier,        # not actually required, FIXME cleanup
         season={},
         start_time=None,
         id=None,
