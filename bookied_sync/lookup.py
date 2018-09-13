@@ -166,7 +166,7 @@ class Lookup(dict, BlockchainInstance):
     def clear_approval_map(self):
         Lookup.approval_map = {}
 
-    def clear_proposal_buffer(self, expiration=60 * 60):
+    def clear_proposal_buffer(self, expiration=6 * 60 * 60):
         Lookup.proposal_buffer_tx = self.peerplays.new_tx()
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
