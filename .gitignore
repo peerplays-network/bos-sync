@@ -61,7 +61,6 @@ target/
 *.swp
 
 peerplays
-bookiesports
 bookied_scrapers
 test-scraping-data
 config.yaml
