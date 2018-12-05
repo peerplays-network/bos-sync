@@ -21,8 +21,8 @@ from peerplays.utils import parse_time, formatTime
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_group_id = "1.17.16"
-event_id = "1.18.0"
+event_group_id = "1.21.20"
+event_id = "1.22.0"
 
 
 class Testcases(unittest.TestCase):
@@ -84,7 +84,8 @@ class Testcases(unittest.TestCase):
         }]
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

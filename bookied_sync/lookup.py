@@ -341,13 +341,19 @@ class Lookup(dict, BlockchainInstance):
                         "Trying to propose an update but failed: {}".format(str(e))
                     )
 
-    def get_pending_operations(self, account="witness-account"):
+    def get_pending_operations(
+        self,
+        account="witness-account",
+        require_witness=True,
+        require_active_witness=True,
+        **kwargs
+    ):
         pending_proposals = Proposals(account)
-        witnesses = Witnesses(only_active=True)
+        witnesses = Witnesses(only_active=require_active_witness)
         props = list()
         for proposal in pending_proposals:
             # Do not inspect proposals that have not been proposed by a witness
-            if proposal.proposer not in witnesses:
+            if require_witness and proposal.proposer not in witnesses:
                 log.info(
                     "Skipping proposal {} as it has been proposed by a non witness '{}'".format(
                         proposal["id"],
@@ -450,7 +456,7 @@ class Lookup(dict, BlockchainInstance):
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for proposalObject in self.get_pending_operations():
+        for proposalObject in self.get_pending_operations(**kwargs):
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
@@ -487,7 +493,7 @@ class Lookup(dict, BlockchainInstance):
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
-        for proposalObject in self.get_pending_operations():
+        for proposalObject in self.get_pending_operations(**kwargs):
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_update:

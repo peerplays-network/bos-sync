@@ -21,8 +21,8 @@ from peerplays.utils import formatTime
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_group_id = "1.17.12"
-event_id = "1.18.2242"
+event_group_id = "1.21.12"
+event_id = "1.22.2242"
 
 start_time = parse_time("2018-05-30T02:05:00")
 
@@ -65,12 +65,12 @@ class Testcases(unittest.TestCase):
 
         # The second event is identical but has a different event group
         t = test_operation_dict.copy()
-        t["event_group_id"] = "1.17.17"
+        t["event_group_id"] = "1.21.17"
         self.assertFalse(self.lookup.test_operation_equal(t))
 
         # The second event is identical but has a different event group
         t = test_operation_dict.copy()
-        t["event_group_id"] = "1.17.17"
+        t["event_group_id"] = "1.21.17"
         self.assertFalse(self.lookup.test_operation_equal(t))
 
         # The second event is identical but has different teams

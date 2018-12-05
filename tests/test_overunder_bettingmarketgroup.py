@@ -10,8 +10,8 @@ from bookied_sync.bettingmarketgroupresolve import (
 from peerplays.utils import parse_time
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_id = "1.18.2242"
-bmg_id = "1.20.218"
+event_id = "1.22.2242"
+bmg_id = "1.24.218"
 test_operation_dict = {
     "id": bmg_id,
     "description": [
@@ -22,7 +22,7 @@ test_operation_dict = {
         ["_ou", "3.5"]
     ],
     "event_id": "0.0.0",
-    "rules_id": "1.19.10",
+    "rules_id": "1.23.10",
     "asset_id": "1.3.0",
     "status": "ongoing",
 }
@@ -122,8 +122,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 0.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'not_win'],  # over
-            ['1.21.2963', 'win'],      # under
+            ['1.25.2962', 'not_win'],  # over
+            ['1.25.2963', 'win'],      # under
         )
 
     def test_result_10_on_35(self):
@@ -133,8 +133,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 1.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'not_win'],  # over
-            ['1.21.2963', 'win'],      # under
+            ['1.25.2962', 'not_win'],  # over
+            ['1.25.2963', 'win'],      # under
         )
 
     def test_result_11_on_35(self):
@@ -144,8 +144,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 2.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'not_win'],  # over
-            ['1.21.2963', 'win'],      # under
+            ['1.25.2962', 'not_win'],  # over
+            ['1.25.2963', 'win'],      # under
         )
 
     def test_result_12_on_35(self):
@@ -155,8 +155,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 3.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'not_win'],  # over
-            ['1.21.2963', 'win'],      # under
+            ['1.25.2962', 'not_win'],  # over
+            ['1.25.2963', 'win'],      # under
         )
 
     def test_result_22_on_35(self):
@@ -166,8 +166,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 4.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'win'],       # over
-            ['1.21.2963', 'not_win'],   # under
+            ['1.25.2962', 'win'],       # over
+            ['1.25.2963', 'not_win'],   # under
         )
 
     def test_result_20_on_15(self):
@@ -177,8 +177,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 2.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'win'],       # over
-            ['1.21.2963', 'not_win'],   # under
+            ['1.25.2962', 'win'],       # over
+            ['1.25.2963', 'not_win'],   # under
         )
 
     def test_result_10_on_15(self):
@@ -188,8 +188,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 1.0)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.2962', 'not_win'],  # over
-            ['1.21.2963', 'win'],      # under
+            ['1.25.2962', 'not_win'],  # over
+            ['1.25.2963', 'win'],      # under
         )
 
     def test_find_fuzzy_market(self):
@@ -197,13 +197,13 @@ class Testcases(unittest.TestCase):
             find_id_search=[
                 lambda x, y: ["en", dList2Dict(x.description)["en"]] in y["description"],
             ]
-        ), "1.20.218")
+        ), "1.24.218")
 
         self.assertEqual(self.lookup.find_id(
             find_id_search=[
                 comparators.cmp_fuzzy(0),
             ]
-        ), "1.20.218")
+        ), "1.24.218")
 
         # No match because   floor(4.9) + 0.5 = 4.5
         self.lookup.set_overunder(4.9)

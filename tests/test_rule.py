@@ -19,7 +19,7 @@ from peerplays.utils import parse_time
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-rule_id = "1.19.12"
+rule_id = "1.23.12"
 test_operation_dicts = [
     {"name": [["en", "R_NBA_OU_1"],
               ["identifier", "R_NBA_OU_1"]],

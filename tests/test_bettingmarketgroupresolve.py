@@ -23,16 +23,16 @@ from bookied_sync.rule import LookupRules
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_id = "1.18.2242"
-bmg_id = '1.20.212'
-bm_id = '1.21.2950'
+event_id = "1.22.2242"
+bmg_id = '1.24.212'
+bm_id = '1.25.2950'
 test_result = [2, 3]  # home, away
 test_operation_dict = {
     "id": bm_id,
     "betting_market_group_id": bmg_id,
     "resolutions": [
-        ["1.21.2950", "win"],      # away
-        ["1.21.2951", "not_win"],  # home
+        ["1.25.2950", "win"],      # away
+        ["1.25.2951", "not_win"],  # home
     ],
 }
 
@@ -98,12 +98,12 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #    [["1.21.2950", "win"],
-        #     ["1.21.2951", "not_win"]]
+        #    [["1.25.2950", "win"],
+        #     ["1.25.2951", "not_win"]]
         #
         self.assertNotEqual(res[0][0], res[1][0])
-        self.assertEqual(res[0], ["1.21.2950", "win"])
-        self.assertEqual(res[1], ["1.21.2951", "not_win"])
+        self.assertEqual(res[0], ["1.25.2950", "win"])
+        self.assertEqual(res[1], ["1.25.2951", "not_win"])
 
         # Draw
         lookup = LookupBettingMarketGroupResolve(
@@ -111,12 +111,12 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #    [["1.21.2950", "not_win"],
-        #     ["1.21.2951", "not_win"]]
+        #    [["1.25.2950", "not_win"],
+        #     ["1.25.2951", "not_win"]]
         #
         self.assertNotEqual(res[0][0], res[1][0])
-        self.assertEqual(res[0], ["1.21.2950", "not_win"])
-        self.assertEqual(res[1], ["1.21.2951", "not_win"])
+        self.assertEqual(res[0], ["1.25.2950", "not_win"])
+        self.assertEqual(res[1], ["1.25.2951", "not_win"])
 
         # Home Team wins
         lookup = LookupBettingMarketGroupResolve(
@@ -124,12 +124,12 @@ class Testcases(unittest.TestCase):
         )
         res = lookup.resolutions
         # should be:
-        #    [["1.21.2950", "not_win"],
-        #     ["1.21.2951", "win"]]
+        #    [["1.25.2950", "not_win"],
+        #     ["1.25.2951", "win"]]
         #
         self.assertNotEqual(res[0][0], res[1][0])
-        self.assertEqual(res[0], ["1.21.2950", "not_win"])
-        self.assertEqual(res[1], ["1.21.2951", "win"])
+        self.assertEqual(res[0], ["1.25.2950", "not_win"])
+        self.assertEqual(res[1], ["1.25.2951", "win"])
 
     def test_approve_proposal(self):
         # We need an approver account
@@ -158,7 +158,8 @@ class Testcases(unittest.TestCase):
         }]
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

@@ -18,8 +18,8 @@ from peerplays.utils import parse_time
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_id = "1.18.2242"
-bmg_id = "1.20.212"
+event_id = "1.22.2242"
+bmg_id = "1.24.212"
 test_operation_dict = {
     "id": bmg_id,
     "description": [["sen", "Moneyline"],
