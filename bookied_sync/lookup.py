@@ -183,6 +183,13 @@ class Lookup(dict, BlockchainInstance):
         """
         txs = list()
 
+        if Lookup.direct_buffer is not None or Lookup.proposal_buffer is not None:
+            log.info("Broadcasting")
+            if Lookup.direct_buffer is not None:
+                log.info(str(Lookup.direct_buffer))
+            if Lookup.proposal_buffer is not None:
+                log.info(str(Lookup.proposal_buffer))
+
         for tx in [
             Lookup.direct_buffer.broadcast(),
             Lookup.proposal_buffer.broadcast()
@@ -240,13 +247,13 @@ class Lookup(dict, BlockchainInstance):
                 * if not, create proposal to update
         """
         if "retriggered" in kwargs:
-            """ Retriggers are used to retry update in case of race confitions.
+            """ Retriggers are used to retry update in case of race conditions.
                 In that case, the backend would throw an exception with a specific
                 type that is caught and results in update() be called again. To
                 prevent recursion and to catch previous **kwargs, we use the
                 retriggered keyword.
             """
-            log.info("Update() has been retriggered!")
+            log.info("Update has been retriggered!")
             kwargs.update(self._retriggered_kwargs)
         else:
             self._retriggered_kwargs = kwargs
@@ -257,7 +264,7 @@ class Lookup(dict, BlockchainInstance):
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id(**kwargs)
             if id:
-                log.info((
+                log.debug((
                     "Object \"{}\" carries id {} on the blockchain. "
                     "Please update your lookup"
                 ).format(self.identifier, id))
@@ -266,7 +273,7 @@ class Lookup(dict, BlockchainInstance):
             else:
                 have_approved = False
                 for has_pending_new in self.has_pending_new(**kwargs):
-                    log.info((
+                    log.debug((
                         "Object \"{}\" has pending update proposal. Approving {}"
                     ).format(self.identifier, has_pending_new))
                     have_approved = True
@@ -283,15 +290,15 @@ class Lookup(dict, BlockchainInstance):
 
                 if not have_approved:
                     # If not found, nor approved, then propose
-                    log.info((
+                    log.debug((
                         "Object \"{}\" does not exist on chain. Proposing ..."
                     ).format(self.identifier))
-                    log.info("Proposing creation of object")
+                    log.debug("Proposing creation of object")
                     try:
-                        log.info(self.propose_new())
+                        log.debug(self.propose_new())
                     except OperationInProposalExistsException as e:
                         if not self._retriggered:
-                            log.info("Failed with DupOp, retriggering ... (propose_new)")
+                            log.warning("Failed with DupOp, retriggering ... (propose_new)")
                             self._retriggered = True
                             self.update(retriggered=True)
                     except Exception as e:
@@ -304,13 +311,13 @@ class Lookup(dict, BlockchainInstance):
 
         # Now test if the object is fully synced
         if not self.is_synced():
-            log.info("Object not fully synced: {}: {}".format(
+            log.debug("Object not fully synced: {}: {}".format(
                 self.__class__.__name__,
                 str(self.get("name", ""))
             ))
             have_approved = False
             for has_pending_update in self.has_pending_update(**kwargs):
-                log.info(
+                log.debug(
                     "Object has pending update: {}: {} in {}".format(
                         self.__class__.__name__,
                         str(self.get("name", "")),
@@ -324,16 +331,16 @@ class Lookup(dict, BlockchainInstance):
                 # damange can be done (in contrast to has_pending_new.
 
             if not have_approved:
-                log.info("Object has no pending update, yet: {}: {}".format(
+                log.debug("Object has no pending update, yet: {}: {}".format(
                     self.__class__.__name__,
                     str(self.get("name", ""))
                 ))
-                log.info("Proposing Update of object")
+                log.debug("Proposing Update of object")
                 try:
-                    log.info(self.propose_update())
+                    log.debug(self.propose_update())
                 except OperationInProposalExistsException as e:
                     if not self._retriggered:
-                        log.info("Failed with DupOp, retriggering ... (propose_update)")
+                        log.warning("Failed with DupOp, retriggering ... (propose_update)")
                         self._retriggered = True
                         self.update(retriggered=True)
                 except Exception as e:
@@ -354,7 +361,7 @@ class Lookup(dict, BlockchainInstance):
         for proposal in pending_proposals:
             # Do not inspect proposals that have not been proposed by a witness
             if require_witness and proposal.proposer not in witnesses:
-                log.info(
+                log.warning(
                     "Skipping proposal {} as it has been proposed by a non witness '{}'".format(
                         proposal["id"],
                         Account(proposal.proposer)["name"]))
@@ -397,7 +404,7 @@ class Lookup(dict, BlockchainInstance):
             :param int oid: Operation number within the proposal
         """
         if pid[:3] == "0.0":
-            log.info("Cannot approve pending-for-broadcast proposals")
+            log.warning("Cannot approve pending-for-broadcast proposals")
             return
         assert self.approving_account, "No approving_account defined!"
 
@@ -421,7 +428,7 @@ class Lookup(dict, BlockchainInstance):
                         p, account["name"]))
                     approved_read_for_delete.append(p)
                     try:
-                        log.info(self.peerplays.approveproposal(
+                        log.debug(self.peerplays.approveproposal(
                             p,
                             account=self.approving_account,
                             append_to=Lookup.direct_buffer
