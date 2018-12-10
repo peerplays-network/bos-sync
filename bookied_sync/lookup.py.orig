@@ -361,8 +361,13 @@ class Lookup(dict, BlockchainInstance):
         for proposal in pending_proposals:
             # Do not inspect proposals that have not been proposed by a witness
             if require_witness and proposal.proposer not in witnesses:
+<<<<<<< HEAD
+                log.warning(
+                    "Skipping proposal {} as it has been proposed by a non witness '{}'".format(
+=======
                 log.info(
                     "Skipping proposal {} as it has been proposed by a non-witness '{}'".format(
+>>>>>>> Unittesting
                         proposal["id"],
                         Account(proposal.proposer)["name"]))
                 continue
