@@ -146,7 +146,7 @@ def cmp_parent(name):
         alt_key_name = "new_{}".format(name)
         parent_id = ist.get(name, ist.get(alt_key_name))
         test_parent = soll.valid_object_id(parent_id)
-        return (not test_parent or ist.get(name, ist.get(alt_key_name)) == soll.parent.id)
+        return (not test_parent or ist.get(name, ist.get(alt_key_name)) == soll.parent_id)
     return cmp
 
 

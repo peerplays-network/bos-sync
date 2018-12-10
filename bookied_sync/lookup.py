@@ -533,6 +533,21 @@ class Lookup(dict, BlockchainInstance):
             :raises IdNotFoundError: if the object couldn't be matched to an
                 object on chain
         """
+        return self.get_id()
+
+    @property
+    def parent_id(self):
+        """ Obtain the id of the parent object, skips proposals
+        """
+        if hasattr(self, "parent"):
+            return self.parent.get_id(skip_proposals=True)
+
+    def get_id(self, skip_proposals=False):
+        """ Gets the id of the object on chain
+
+            :raises IdNotFoundError: if the object couldn't be matched to an
+                object on chain
+        """
         # Do we already know the id?
         if (
             "id" in self and
@@ -550,9 +565,10 @@ class Lookup(dict, BlockchainInstance):
         # Try find the id in the pending on-chain proposals
         # we expect the first proposalthat proposes the
         # parent object to go through
-        found = list(self.has_pending_new())
-        if found:
-            return found[0]["pid"]  # pid of first return element
+        if not skip_proposals:
+            found = list(self.has_pending_new())
+            if found:
+                return found[0]["pid"]  # pid of first return element
 
         # Try find the id in the locally buffered proposals
         found = self.has_buffered_new()  # not a generator
@@ -564,13 +580,6 @@ class Lookup(dict, BlockchainInstance):
                 self.__class__.__name__,
                 str(self.items())))
         return found
-
-    @property
-    def parent_id(self):
-        """ Obtain the id of the parent object
-        """
-        if hasattr(self, "parent"):
-            return self.parent.id
 
     def is_bookiesports_in_sync(self):
         """ Test if bookiesports is in sync

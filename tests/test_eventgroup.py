@@ -46,7 +46,7 @@ class Testcases(unittest.TestCase):
         self.assertEqual(self.lookup["name"]["en"], "NBA Regular Season")
         self.assertTrue(self.lookup.parent)
         self.assertTrue(self.lookup.sport_id)
-        self.assertEqual(self.lookup.parent.id, self.lookup.sport_id)
+        self.assertEqual(self.lookup.parent_id, self.lookup.sport_id)
 
     def test_test_operation_equal(self):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))

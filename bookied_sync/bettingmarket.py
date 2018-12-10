@@ -101,12 +101,12 @@ class LookupBettingMarket(Lookup, dict):
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
-        parent_id = self.parent.id
+        parent_id = self.parent_id
         if not self.valid_object_id(parent_id):
             return
 
         bms = BettingMarkets(
-            self.parent.id,
+            self.parent_id,
             peerplays_instance=self.peerplays)
 
         find_id_search = kwargs.get("find_id_search", [
@@ -137,7 +137,7 @@ class LookupBettingMarket(Lookup, dict):
         return self.peerplays.betting_market_create(
             description=self.description,
             payout_condition=[],
-            group_id=self.parent.id,
+            group_id=self.parent_id,
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer
         )
@@ -149,7 +149,7 @@ class LookupBettingMarket(Lookup, dict):
             self.id,
             payout_condition=[],
             description=self.description,
-            group_id=self.parent.id,
+            group_id=self.parent_id,
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer
         )

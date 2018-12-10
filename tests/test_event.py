@@ -53,7 +53,7 @@ class Testcases(unittest.TestCase):
 
         self.assertTrue(self.lookup.parent)
         self.assertTrue(self.lookup.event_group_id)
-        self.assertEqual(self.lookup.parent.id, self.lookup.event_group_id)
+        self.assertEqual(self.lookup.parent_id, self.lookup.event_group_id)
 
     def test_eventscheme_namecreation(self):
         self.assertIn(
