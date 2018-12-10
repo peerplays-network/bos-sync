@@ -462,12 +462,14 @@ class Lookup(dict, BlockchainInstance):
             allows us to define the 'comparing'-lambda from the outside
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
+        log.debug("Looking for {}".format(self))
         from peerplaysbase.operationids import getOperationNameForId
-        for proposalObject in self.get_pending_operations(**kwargs):
+        pending_proposals = self.get_pending_operations(**kwargs)
+        for proposalObject in pending_proposals:
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
-                    log.debug("Testing pending proposal {}".format(proposal["id"]))
+                    log.debug("Testing pending proposal {}-{}".format(proposal["id"], oid))
                     kwargs["proposal"] = proposal
                     if self.test_operation_equal(op[1], **kwargs):
                         yield dict(pid=pid, oid=oid, proposal=proposal)
