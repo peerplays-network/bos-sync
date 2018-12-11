@@ -20,11 +20,15 @@ from peerplays.utils import parse_time
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-sport_id = "1.16.1"
+sport_id = "1.20.1"
 
 test_operation_dict = {
     "id": sport_id,
-    "name": [['en', 'Basketball'], ['identifier', 'Basketball'], ['sen', 'Basketball']],
+    "name": [
+        ['en', 'Basketball'],
+        ['identifier', 'Basketball'],
+        ['sen', 'Basketball']
+    ],
 }
 
 
@@ -91,7 +95,7 @@ class Testcases(unittest.TestCase):
         tx = self.lookup.propose_new()
         tx = tx.json()
         propops = tx["operations"][0][1]["proposed_ops"][0]["op"]
-        Proposals.cache["1.2.1"] = [{
+        Proposals.cache["1.2.1"].append({
             'available_active_approvals': [],
             'available_key_approvals': [],
             'available_owner_approvals': [],
@@ -105,10 +109,11 @@ class Testcases(unittest.TestCase):
             'proposer': '1.2.8',
             'required_active_approvals': ['1.2.1'],
             'required_owner_approvals': []
-        }]
+        })
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

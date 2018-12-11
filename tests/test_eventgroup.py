@@ -20,8 +20,8 @@ from peerplays.utils import parse_time
 from .fixtures import fixture_data, config, lookup_test_eventgroup
 
 
-sport_id = "1.16.1"
-event_group_id = "1.17.12"
+sport_id = "1.20.1"
+event_group_id = "1.21.12"
 
 test_operation_dict = {
     "id": event_group_id,
@@ -46,7 +46,7 @@ class Testcases(unittest.TestCase):
         self.assertEqual(self.lookup["name"]["en"], "NBA Regular Season")
         self.assertTrue(self.lookup.parent)
         self.assertTrue(self.lookup.sport_id)
-        self.assertEqual(self.lookup.parent.id, self.lookup.sport_id)
+        self.assertEqual(self.lookup.parent_id, self.lookup.sport_id)
 
     def test_test_operation_equal(self):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))
@@ -118,7 +118,8 @@ class Testcases(unittest.TestCase):
         }]
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

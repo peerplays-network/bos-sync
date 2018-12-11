@@ -9,8 +9,8 @@ from bookied_sync.bettingmarketgroupresolve import (
 )
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_id = "1.18.2242"
-bmg_id = "1.20.300"
+event_id = "1.22.2242"
+bmg_id = "1.24.300"
 test_operation_dict = {
     "id": bmg_id,
     "description": [
@@ -22,7 +22,7 @@ test_operation_dict = {
         ["_hca", "-1.5"]
     ],
     "event_id": "0.0.0",
-    "rules_id": "1.19.10",
+    "rules_id": "1.23.10",
     "asset_id": "1.3.0",
     "status": "ongoing",
 }
@@ -124,8 +124,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, -1.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.3000', 'not_win'],
-            ['1.21.3001', 'win']
+            ['1.25.3000', 'not_win'],
+            ['1.25.3001', 'win']
         )
 
     def test_result_01_on_10(self):
@@ -137,8 +137,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, -2.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.3000', 'not_win'],
-            ['1.21.3001', 'win']
+            ['1.25.3000', 'not_win'],
+            ['1.25.3001', 'win']
         )
 
     def test_result_10_on_10(self):
@@ -150,8 +150,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, -0.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.3000', 'not_win'],
-            ['1.21.3001', 'win']
+            ['1.25.3000', 'not_win'],
+            ['1.25.3001', 'win']
         )
 
     def test_result_20_on_10(self):
@@ -163,8 +163,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, 0.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.3000', 'win'],
-            ['1.21.3001', 'not_win']
+            ['1.25.3000', 'win'],
+            ['1.25.3001', 'not_win']
         )
 
     def test_result_00_on_20(self):
@@ -177,8 +177,8 @@ class Testcases(unittest.TestCase):
         self.assertEqual(resolve.metric, -2.5)
         self.assertResult(
             resolve.resolutions,
-            ['1.21.3002', 'not_win'],
-            ['1.21.3003', 'win']
+            ['1.25.3002', 'not_win'],
+            ['1.25.3003', 'win']
         )
 
     def test_find_fuzzy_market(self):
@@ -188,13 +188,13 @@ class Testcases(unittest.TestCase):
             find_id_search=[
                 lambda x, y: ["en", dList2Dict(x.description)["en"]] in y["description"],
             ]
-        ), "1.20.301")
+        ), "1.24.301")
 
         self.assertEqual(self.lookup.find_id(
             find_id_search=[
                 comparators.cmp_fuzzy(.5),
             ]
-        ), "1.20.220")
+        ), "1.24.220")
 
         self.lookup.set_handicaps(home=6)
         self.assertFalse(self.lookup.find_id(

@@ -11,7 +11,7 @@ from peerplays.instance import set_shared_blockchain_instance
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-import logging
+# import logging
 # logging.basicConfig(level=logging.INFO)
 
 
@@ -31,7 +31,7 @@ class Testcases(unittest.TestCase):
 
     def test_search_pending_props(self):
         # As defined in bookiesports
-        self.assertEqual(self.lookup.id, "1.16.0")
+        self.assertEqual(self.lookup.id, "1.20.0")
 
         # Proposal creation
         self.lookup.propose_new()
@@ -44,11 +44,11 @@ class Testcases(unittest.TestCase):
         self.assertEqual(proposed_op[0], operations[self.lookup.operation_create])
 
         # The id as defined in the yaml file has priority
-        self.assertEqual(self.lookup.id, "1.16.0")
+        self.assertEqual(self.lookup.id, "1.20.0")
 
         # Let's remove the id from the yaml file to load from chain
         self.lookup.pop("id", None)
-        self.assertEqual(self.lookup.id, "1.16.0")
+        self.assertEqual(self.lookup.id, "1.20.0")
 
         # Let's also remove the id from chain to look into proposal buffer
         def mockedClass(m, *args, **kwargs):
@@ -62,8 +62,7 @@ class Testcases(unittest.TestCase):
             self.assertEqual(self.lookup.id, "0.0.0")
 
     def test_approve_proposal_instead(self):
-        logging.info("Creating ....")
-        self.lookup.update()
+        self.lookup.update(require_witness=False)
         # this is supposed to be an update of the proposal 1.10.1
         tx = self.lookup.direct_buffer
         self.assertEqual(tx["operations"][0][0], 23)

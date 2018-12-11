@@ -20,8 +20,8 @@ from peerplays.utils import parse_time, formatTime
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-event_group_id = "1.17.12"
-event_id = "1.18.2242"
+event_group_id = "1.21.12"
+event_id = "1.22.2242"
 
 start_time = parse_time(formatTime(datetime.datetime.utcnow()))
 start_time_tomorrow = parse_time(formatTime(datetime.datetime.utcnow() + datetime.timedelta(days=1)))
@@ -53,7 +53,7 @@ class Testcases(unittest.TestCase):
 
         self.assertTrue(self.lookup.parent)
         self.assertTrue(self.lookup.event_group_id)
-        self.assertEqual(self.lookup.parent.id, self.lookup.event_group_id)
+        self.assertEqual(self.lookup.parent_id, self.lookup.event_group_id)
 
     def test_eventscheme_namecreation(self):
         self.assertIn(
@@ -237,7 +237,8 @@ class Testcases(unittest.TestCase):
         }]
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

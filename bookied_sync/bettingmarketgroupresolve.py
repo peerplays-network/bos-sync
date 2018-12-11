@@ -197,7 +197,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         if (
             all([a in chainsresults for a in lookupresults]) and
             all([b in lookupresults for b in chainsresults]) and
-            (not test_bmg or bmg_id == self.parent.id)
+            (not test_bmg or bmg_id == self.parent_id)
         ):
             return True
         return False
@@ -217,7 +217,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         """ This call proposes the resolution of the betting market group
         """
         return self.peerplays.betting_market_resolve(
-            self.parent.id,
+            self.parent_id,
             self.resolutions,
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer

@@ -18,9 +18,9 @@ from peerplays.utils import parse_time
 from .fixtures import fixture_data, config, lookup_test_event
 
 
-event_id = "1.18.2242"
-bmg_id = "1.20.212"
-bm_id = "1.21.2950"
+event_id = "1.22.2242"
+bmg_id = "1.24.212"
+bm_id = "1.25.2950"
 test_operation_dict = {
     "id": bm_id,
     "description": [["en", "Boston Celtics"]],
@@ -116,7 +116,8 @@ class Testcases(unittest.TestCase):
         }]
         # import logging
         # logging.basicConfig(level=logging.DEBUG)
-        pending_propos = list(self.lookup.has_pending_new())
+        pending_propos = list(self.lookup.has_pending_new(require_witness=False))
+        self.assertTrue(len(pending_propos) > 0)
         self.assertIn(
             pending_propos[0]["pid"],
             self.lookup.approval_map

@@ -48,8 +48,8 @@ class LookupEvent(Lookup, dict):
     def __init__(
         self,
         teams,
-        eventgroup_identifier,
-        sport_identifier,
+        eventgroup_identifier,   # not actually required, FIXME cleanup
+        sport_identifier,        # not actually required, FIXME cleanup
         season={},
         start_time=None,
         id=None,
@@ -209,7 +209,7 @@ class LookupEvent(Lookup, dict):
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
-        parent_id = self.parent.id
+        parent_id = self.parent_id
         if not self.valid_object_id(parent_id):
             return
 
@@ -364,4 +364,4 @@ class LookupEvent(Lookup, dict):
 
     @property
     def event_group_id(self):
-        return self.parent.id
+        return self.parent_id

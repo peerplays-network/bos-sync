@@ -89,12 +89,12 @@ class LookupEventGroup(Lookup, dict):
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
-        parent_id = self.parent.id
+        parent_id = self.parent_id
         if not self.valid_object_id(parent_id):
             return
 
         egs = EventGroups(
-            self.parent.id,
+            self.parent_id,
             peerplays_instance=self.peerplays)
 
         find_id_search = kwargs.get("find_id_search", [
@@ -190,4 +190,4 @@ class LookupEventGroup(Lookup, dict):
 
     @property
     def sport_id(self):
-        return self.parent.id
+        return self.parent_id
