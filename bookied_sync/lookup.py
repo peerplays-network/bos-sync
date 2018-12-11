@@ -185,9 +185,9 @@ class Lookup(dict, BlockchainInstance):
 
         if Lookup.direct_buffer is not None or Lookup.proposal_buffer is not None:
             log.info("Broadcasting")
-            if Lookup.direct_buffer is not None:
+            if Lookup.direct_buffer is not None and not Lookup.direct_buffer.is_empty():
                 log.info(str(Lookup.direct_buffer))
-            if Lookup.proposal_buffer is not None:
+            if Lookup.proposal_buffer is not None and not Lookup.proposal_buffer.is_empty():
                 log.info(str(Lookup.proposal_buffer))
 
         for tx in [
