@@ -396,6 +396,17 @@ proposals:
         - [identifier, AmericanFootball]
         sport_id: 1.20.0
 
+ - proposal_id: 1.10.2413
+   operations:
+    - sport_update:
+        extensions: []
+        fee: {amount: 0, asset_id: 1.3.0}
+        new_name:
+        - [sen, Basketball]
+        - [en, Basketball]
+        - [identifier, Basketball]
+        sport_id: 1.20.1
+
 witnesses:
  - id: 1.6.0
    witness_account: 1.2.7

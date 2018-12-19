@@ -4,7 +4,6 @@ import logging
 from peerplays.instance import BlockchainInstance
 from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
-from peerplays.storage import configStorage as config
 from peerplays.witness import Witnesses
 from peerplaysapi.exceptions import OperationInProposalExistsException
 from .exceptions import ObjectNotFoundError
@@ -35,6 +34,7 @@ class Lookup(dict, BlockchainInstance):
         without interfering with the construction of a new proposal.
 
     """
+
     #: Singelton to store data and prevent rereading if Lookup is
     #: instantiated multiple times
     data = dict()
@@ -70,8 +70,8 @@ class Lookup(dict, BlockchainInstance):
             self.proposing_account = proposing_account
         elif self.proposing_account:
             pass
-        elif "default_account" in config:
-            proposing_account = config["default_account"]
+        elif "default_account" in self.blockchain.config:
+            proposing_account = self.blockchain.config["default_account"]
         else:
             log.error("No proposing account known")
             raise Exception("No proposing account known!")
@@ -80,8 +80,8 @@ class Lookup(dict, BlockchainInstance):
             self.approving_account = approving_account
         elif self.approving_account:
             pass
-        elif "default_account" in config:
-            approving_account = config["default_account"]
+        elif "default_account" in self.blockchain.config:
+            approving_account = self.blockchain.config["default_account"]
         else:
             log.error("No approving account known")
             raise Exception("No approving account known!")
@@ -94,14 +94,13 @@ class Lookup(dict, BlockchainInstance):
 
         # Do not reload sports if already stored in data
         if (
-            not Lookup.data or
-            (sports_folder and Lookup.sports_folder != sports_folder) or
-            (network and Lookup._network_name != network)
+            not Lookup.data
+            or (sports_folder and Lookup.sports_folder != sports_folder)
+            or (network and Lookup._network_name != network)
         ):
             # Load sports
             self._bookiesports = BookieSports(
-                network=network,
-                sports_folder=sports_folder
+                network=network, sports_folder=sports_folder
             )
             Lookup.sports_folder = sports_folder
             Lookup._network_name = network
@@ -110,7 +109,9 @@ class Lookup(dict, BlockchainInstance):
             # Ensure that the node is on the right network
             sports_chain_id = self._bookiesports.chain_id
             node_chain_id = self.blockchain.rpc.chain_params["chain_id"]
-            assert sports_chain_id == "*" or sports_chain_id == node_chain_id, "You are connecting to {} while network {} requires {}".format(
+            assert (
+                sports_chain_id == "*" or sports_chain_id == node_chain_id
+            ), "You are connecting to {} while network {} requires {}".format(
                 node_chain_id, network, sports_chain_id
             )
 
@@ -141,6 +142,7 @@ class Lookup(dict, BlockchainInstance):
 
     """ Legacy implementations
     """
+
     def set_approving_account(self, account):
         self.approving_account = account
 
@@ -171,7 +173,7 @@ class Lookup(dict, BlockchainInstance):
         Lookup.proposal_buffer = self.peerplays.new_proposal(
             Lookup.proposal_buffer_tx,
             proposer=self.proposing_account,
-            proposal_expiration=expiration
+            proposal_expiration=expiration,
         )
 
     def clear_direct_buffer(self):
@@ -192,7 +194,7 @@ class Lookup(dict, BlockchainInstance):
 
         for tx in [
             Lookup.direct_buffer.broadcast(),
-            Lookup.proposal_buffer.broadcast()
+            Lookup.proposal_buffer.broadcast(),
         ]:
             if tx and dict(tx) and tx.get("operations", []):
                 txs.append(UpdateTransaction(tx))
@@ -224,10 +226,12 @@ class Lookup(dict, BlockchainInstance):
         """ List all sports in the  lookup
         """
         from .sport import LookupSport
+
         return [LookupSport(x) for x in self.data["sports"]]
 
     def get_sport(self, sportname):
         from .sport import LookupSport
+
         return LookupSport(sportname)
 
     # Update call
@@ -264,18 +268,22 @@ class Lookup(dict, BlockchainInstance):
             # Test if an object with the characteristics (i.e. name) exist
             id = self.find_id(**kwargs)
             if id:
-                log.debug((
-                    "Object \"{}\" carries id {} on the blockchain. "
-                    "Please update your lookup"
-                ).format(self.identifier, id))
+                log.debug(
+                    (
+                        'Object "{}" carries id {} on the blockchain. '
+                        "Please update your lookup"
+                    ).format(self.identifier, id)
+                )
                 self["id"] = id
 
             else:
                 have_approved = False
                 for has_pending_new in self.has_pending_new(**kwargs):
-                    log.debug((
-                        "Object \"{}\" has pending update proposal. Approving {}"
-                    ).format(self.identifier, has_pending_new))
+                    log.debug(
+                        (
+                            'Object "{}" has pending update proposal. Approving {}'
+                        ).format(self.identifier, has_pending_new)
+                    )
                     have_approved = True
                     self.approve(**has_pending_new)
 
@@ -285,20 +293,26 @@ class Lookup(dict, BlockchainInstance):
                     # other then the first in the line
                     proposal = has_pending_new.get("proposal")
                     if len(list(proposal.proposed_operations)) < 2:
-                        log.info("Skipping here, as we only approve one create operation")
+                        log.info(
+                            "Skipping here, as we only approve one create operation"
+                        )
                         break
 
                 if not have_approved:
                     # If not found, nor approved, then propose
-                    log.debug((
-                        "Object \"{}\" does not exist on chain. Proposing ..."
-                    ).format(self.identifier))
+                    log.debug(
+                        ('Object "{}" does not exist on chain. Proposing ...').format(
+                            self.identifier
+                        )
+                    )
                     log.debug("Proposing creation of object")
                     try:
                         log.debug(self.propose_new())
                     except OperationInProposalExistsException as e:
                         if not self._retriggered:
-                            log.warning("Failed with DupOp, retriggering ... (propose_new)")
+                            log.warning(
+                                "Failed with DupOp, retriggering ... (propose_new)"
+                            )
                             self._retriggered = True
                             self.update(retriggered=True)
                     except Exception as e:
@@ -311,18 +325,20 @@ class Lookup(dict, BlockchainInstance):
 
         # Now test if the object is fully synced
         if not self.is_synced():
-            log.debug("Object not fully synced: {}: {}".format(
-                self.__class__.__name__,
-                str(self.get("name", ""))
-            ))
+            log.debug(
+                "Object not fully synced: {}: {}".format(
+                    self.__class__.__name__, str(self.get("name", ""))
+                )
+            )
             have_approved = False
             for has_pending_update in self.has_pending_update(**kwargs):
                 log.debug(
                     "Object has pending update: {}: {} in {}".format(
                         self.__class__.__name__,
                         str(self.get("name", "")),
-                        str(has_pending_update)
-                    ))
+                        str(has_pending_update),
+                    )
+                )
                 have_approved = True
                 self.approve(**has_pending_update)
 
@@ -331,16 +347,19 @@ class Lookup(dict, BlockchainInstance):
                 # damange can be done (in contrast to has_pending_new.
 
             if not have_approved:
-                log.debug("Object has no pending update, yet: {}: {}".format(
-                    self.__class__.__name__,
-                    str(self.get("name", ""))
-                ))
+                log.debug(
+                    "Object has no pending update, yet: {}: {}".format(
+                        self.__class__.__name__, str(self.get("name", ""))
+                    )
+                )
                 log.debug("Proposing Update of object")
                 try:
                     log.debug(self.propose_update())
                 except OperationInProposalExistsException as e:
                     if not self._retriggered:
-                        log.warning("Failed with DupOp, retriggering ... (propose_update)")
+                        log.warning(
+                            "Failed with DupOp, retriggering ... (propose_update)"
+                        )
                         self._retriggered = True
                         self.update(retriggered=True)
                 except Exception as e:
@@ -363,8 +382,9 @@ class Lookup(dict, BlockchainInstance):
             if require_witness and proposal.proposer not in witnesses:
                 log.info(
                     "Skipping proposal {} as it has been proposed by a non-witness '{}'".format(
-                        proposal["id"],
-                        Account(proposal.proposer)["name"]))
+                        proposal["id"], Account(proposal.proposer)["name"]
+                    )
+                )
                 continue
             ret = []
             if not proposal["id"] in Lookup.approval_map:
@@ -379,9 +399,7 @@ class Lookup(dict, BlockchainInstance):
     def get_buffered_operations(self):
         # Obtain the proposals that we have in our buffer
         # from peerplaysbase.operationids import getOperationNameForId
-        for oid, op in enumerate(
-            Lookup.proposal_buffer.list_operations()
-        ):
+        for oid, op in enumerate(Lookup.proposal_buffer.list_operations()):
             yield op.json(), "0.0.0", "0.0.%d" % oid
 
     def approve(self, pid, oid, **kwargs):
@@ -424,18 +442,20 @@ class Lookup(dict, BlockchainInstance):
                 proposal = Proposal(p)
                 account = Account(self.approving_account)
                 if account["id"] not in proposal["available_active_approvals"]:
-                    log.info("Approving proposal {} by {}".format(
-                        p, account["name"]))
+                    log.info("Approving proposal {} by {}".format(p, account["name"]))
                     approved_read_for_delete.append(p)
                     try:
-                        log.debug(self.peerplays.approveproposal(
-                            p,
-                            account=self.approving_account,
-                            append_to=Lookup.direct_buffer
-                        ))
+                        log.debug(
+                            self.peerplays.approveproposal(
+                                p,
+                                account=self.approving_account,
+                                append_to=Lookup.direct_buffer,
+                            )
+                        )
                     except Exception as e:
-                        log.debug("Exception when approving proposal: {}".format(
-                            str(e)))
+                        log.debug(
+                            "Exception when approving proposal: {}".format(str(e))
+                        )
                         # Not raising as at this point, the only reason for
                         # this to fail is (probably) for the proposal to be
                         # approved already - in the meantime.
@@ -443,7 +463,8 @@ class Lookup(dict, BlockchainInstance):
                 else:
                     log.info(
                         "Proposal {} has already been approved by {}".format(
-                            p, account["name"])
+                            p, account["name"]
+                        )
                     )
 
         # In order not to approve the same proposal again and again, we remove
@@ -464,12 +485,15 @@ class Lookup(dict, BlockchainInstance):
         """
         log.debug("Looking for {}".format(self))
         from peerplaysbase.operationids import getOperationNameForId
+
         pending_proposals = self.get_pending_operations(**kwargs)
         for proposalObject in pending_proposals:
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
                 if getOperationNameForId(op[0]) == self.operation_create:
-                    log.debug("Testing pending proposal {}-{}".format(proposal["id"], oid))
+                    log.debug(
+                        "Testing pending proposal {}-{}".format(proposal["id"], oid)
+                    )
                     kwargs["proposal"] = proposal
                     if self.test_operation_equal(op[1], **kwargs):
                         yield dict(pid=pid, oid=oid, proposal=proposal)
@@ -485,6 +509,7 @@ class Lookup(dict, BlockchainInstance):
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
+
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_create:
                 if self.test_operation_equal(op[1], **kwargs):
@@ -502,6 +527,7 @@ class Lookup(dict, BlockchainInstance):
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
+
         for proposalObject in self.get_pending_operations(**kwargs):
             proposal = proposalObject["proposal"]
             for op, pid, oid in proposalObject["data"]:
@@ -521,6 +547,7 @@ class Lookup(dict, BlockchainInstance):
             and is needed for fuzzy matching (e.g. for dynamic markets)
         """
         from peerplaysbase.operationids import getOperationNameForId
+
         for op, pid, oid in self.get_buffered_operations():
             if getOperationNameForId(op[0]) == self.operation_update:
                 if self.test_operation_equal(op[1], **kwargs):
@@ -550,10 +577,10 @@ class Lookup(dict, BlockchainInstance):
         """
         # Do we already know the id?
         if (
-            "id" in self and
-            self["id"] and
-            isinstance(self["id"], str) and
-            len(self["id"].split(".")) == 3
+            "id" in self
+            and self["id"]
+            and isinstance(self["id"], str)
+            and len(self["id"].split(".")) == 3
         ):
             return self["id"]
 
@@ -577,8 +604,9 @@ class Lookup(dict, BlockchainInstance):
 
         raise ObjectNotFoundError(
             "Object not found on chain: {}: {}".format(
-                self.__class__.__name__,
-                str(self.items())))
+                self.__class__.__name__, str(self.items())
+            )
+        )
         return found
 
     def is_bookiesports_in_sync(self):
@@ -636,7 +664,7 @@ class Lookup(dict, BlockchainInstance):
 
             .. note:: The object id must *not* be a proposal (1.10.x)
         """
-        test = (id and id[0] == "1" and id[:4] != "1.10")
+        test = id and id[0] == "1" and id[:4] != "1.10"
         if test and fetch:
             fetch(id)
         return test

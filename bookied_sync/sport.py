@@ -31,22 +31,22 @@ class LookupSport(Lookup, dict):
             for name, s in self.data["sports"].items():
                 if (
                     # Name
-                    name.lower() == sport.lower() or
+                    name.lower() == sport.lower()
+                    or
                     # Identifier
-                    s.get("identifier", "").lower() == sport.lower() or
+                    s.get("identifier", "").lower() == sport.lower()
+                    or
                     # List of languages
-                    sport.lower() in [
-                        x.lower()for x in s.get("name", {}).values()] or
+                    sport.lower() in [x.lower() for x in s.get("name", {}).values()]
+                    or
                     # List of aliases
-                    sport.lower() in [
-                        x.lower() for x in s.get("aliases", [])]
+                    sport.lower() in [x.lower() for x in s.get("aliases", [])]
                 ):
                     found = True
                     dict.__init__(self, s)
 
             if not found:
-                raise ObjectNotFoundInLookup("Not Found: {}".format(
-                    sport))
+                raise ObjectNotFoundInLookup("Not Found: {}".format(sport))
 
     @property
     def eventgroups(self):
@@ -54,16 +54,14 @@ class LookupSport(Lookup, dict):
             sport
         """
         for e in self["eventgroups"]:
-            yield LookupEventGroup(
-                self.identifier, e)
+            yield LookupEventGroup(self.identifier, e)
 
     @property
     def rules(self):
         """ Return instances of LookupRules for all rules in this sport
         """
         for e in self["rules"]:
-            yield LookupRules(
-                self.identifier, e)
+            yield LookupRules(self.identifier, e)
 
     @property
     def participants(self):
@@ -71,8 +69,7 @@ class LookupSport(Lookup, dict):
             sport
         """
         for e in self["participants"]:
-            yield LookupParticipants(
-                self.identifier, e)
+            yield LookupParticipants(self.identifier, e)
 
     @property
     def bettingmarketgroups(self):
@@ -80,23 +77,27 @@ class LookupSport(Lookup, dict):
             group of this sport
         """
         for e in self["bettingmarketgroups"]:
-            yield LookupBettingMarketGroup(
-                self.identifier, e)
+            yield LookupBettingMarketGroup(self.identifier, e)
 
     def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_required_keys(["new_name"], ["name"]),
-            comparators.cmp_all_name(),
-        ])
+        test_operation_equal_search = kwargs.get(
+            "test_operation_equal_search",
+            [
+                comparators.cmp_required_keys(["new_name"], ["name"]),
+                comparators.cmp_all_name(),
+            ],
+        )
 
-        if all([
-            # compare by using 'all' the funcs in find_id_search
-            func(self, sport)
-            for func in test_operation_equal_search
-        ]):
+        if all(
+            [
+                # compare by using 'all' the funcs in find_id_search
+                func(self, sport)
+                for func in test_operation_equal_search
+            ]
+        ):
             return True
         return False
 
@@ -108,15 +109,17 @@ class LookupSport(Lookup, dict):
                        **ENGLISH**!
         """
         sports = Sports(peerplays_instance=self.peerplays)
-        find_id_search = kwargs.get("find_id_search", [
-            comparators.cmp_name("identifier"),
-        ])
+        find_id_search = kwargs.get(
+            "find_id_search", [comparators.cmp_name("identifier")]
+        )
         for sport in sports:
-            if all([
-                # compare by using 'all' the funcs in find_id_search
-                func(self, sport)
-                for func in find_id_search
-            ]):
+            if all(
+                [
+                    # compare by using 'all' the funcs in find_id_search
+                    func(self, sport)
+                    for func in find_id_search
+                ]
+            ):
                 return sport["id"]
 
     def is_synced(self):
@@ -132,9 +135,8 @@ class LookupSport(Lookup, dict):
         """ Propose operation to create this object
         """
         return self.peerplays.sport_create(
-            self.names,
-            account=self.proposing_account,
-            append_to=Lookup.proposal_buffer)
+            self.names, account=self.proposing_account, append_to=Lookup.proposal_buffer
+        )
 
     def propose_update(self):
         """ Propose to update this object to match  lookup
@@ -143,7 +145,8 @@ class LookupSport(Lookup, dict):
             self["id"],
             names=self.names,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer)
+            append_to=Lookup.proposal_buffer,
+        )
 
     @property
     def name(self):
@@ -157,9 +160,4 @@ class LookupSport(Lookup, dict):
         """
         names = self["name"]
         names.update({"identifier": self["identifier"]})
-        return [
-            [
-                k,
-                v
-            ] for k, v in names.items()
-        ]
+        return [[k, v] for k, v in names.items()]
