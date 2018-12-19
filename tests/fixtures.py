@@ -74,6 +74,7 @@ def add_event(data):
 
 
 def fixture_data():
+    peerplays.clear()
     BettingMarkets.clear_cache()
     Rules.clear_cache()
     BettingMarketGroups.clear_cache()
@@ -98,8 +99,6 @@ def fixture_data():
 
     proposals = []
     for proposal in data.get("proposals", []):
-        # id = proposal["required_active_approvals"][0]
-        id = "1.2.1"
         ops = list()
         for _op in proposal["operations"]:
             for opName, op in _op.items():
@@ -124,7 +123,6 @@ def fixture_data():
             "required_owner_approvals": [],
         }
         proposals.append(Proposal(proposal_data))
-        # Also define the actual object in the Object Cache
 
     Proposals._import(proposals, "1.2.1")
     Proposals._import(proposals, "witness-account")
