@@ -20,19 +20,37 @@ from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 
+# default wifs key for testing
+wifs = [
+    "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
+    "5KCBDTcyDqzsqehcb52tW5nU6pXife6V2rX9Yf7c3saYSzbDZ5W",
+]
+wif = wifs[0]
+core_unit = "TEST"
 
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-config = dict(nobroadcast=True)
-ppy = PeerPlays(keys=[wif], nobroadcast=config["nobroadcast"], num_retries=1)
-set_shared_peerplays_instance(ppy)
+# peerplays instance
+peerplays = PeerPlays(
+    "wss://api.ppy-beatrice.blckchnd.com", keys=wifs, nobroadcast=True, num_retries=1
+)
+config = peerplays.config
+
+# Set defaults
+peerplays.set_default_account("init0")
+set_shared_peerplays_instance(peerplays)
+
+# Ensure we are not going to transaction anythin on chain!
+assert peerplays.nobroadcast
+
+# Setup base lookup
 lookup = Lookup(
     proposer="init0",
-    blockchain_instance=ppy,
+    blockchain_instance=peerplays,
     network="unittests",
     sports_folder=os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "bookiesports"
     ),
 )
+# ensure lookup isn't broadcasting either
 assert lookup.blockchain.nobroadcast
 
 
@@ -74,7 +92,7 @@ def add_event(data):
 
 
 def fixture_data():
-    ppy.clear()
+    peerplays.clear()
     BettingMarkets.clear_cache()
     Rules.clear_cache()
     BettingMarketGroups.clear_cache()
