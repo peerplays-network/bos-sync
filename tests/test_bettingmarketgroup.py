@@ -8,7 +8,7 @@ from peerplays.event import Event
 from peerplays.rule import Rules
 from peerplays.eventgroup import EventGroups
 from peerplays.bettingmarketgroup import BettingMarketGroups
-from peerplays.blockchainobject import BlockchainObject, ObjectCache
+from peerplays.blockchainobject import BlockchainObject
 from peerplays.instance import set_shared_blockchain_instance
 from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
@@ -22,9 +22,11 @@ event_id = "1.22.2242"
 bmg_id = "1.24.212"
 test_operation_dict = {
     "id": bmg_id,
-    "description": [["sen", "Moneyline"],
-                    ["en", "Moneyline"],
-                    ["display_name", "Moneyline"]],
+    "description": [
+        ["sen", "Moneyline"],
+        ["en", "Moneyline"],
+        ["display_name", "Moneyline"],
+    ],
     "event_id": "0.0.0",
     "rules_id": "1.19.0",
     "asset_id": "1.3.0",
@@ -33,7 +35,6 @@ test_operation_dict = {
 
 
 class Testcases(unittest.TestCase):
-
     def setUp(self):
         fixture_data()
 
@@ -62,6 +63,7 @@ class Testcases(unittest.TestCase):
 
     def test_propose_new(self):
         from peerplaysbase.operationids import operations
+
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_new()
         tx = tx.json()
@@ -71,7 +73,7 @@ class Testcases(unittest.TestCase):
         self.assertEqual(tx["operations"][0][0], 22)
         self.assertEqual(
             tx["operations"][0][1]["proposed_ops"][0]["op"][0],
-            operations[self.lookup.operation_create]
+            operations[self.lookup.operation_create],
         )
 
     def test_propose_update(self):
@@ -87,5 +89,5 @@ class Testcases(unittest.TestCase):
         self.assertEqual(tx["operations"][0][0], 22)
         self.assertEqual(
             tx["operations"][0][1]["proposed_ops"][0]["op"][0],
-            operations[self.lookup.operation_update]
+            operations[self.lookup.operation_update],
         )
