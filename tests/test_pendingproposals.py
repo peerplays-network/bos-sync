@@ -11,21 +11,15 @@ from peerplays.instance import set_shared_blockchain_instance
 
 from .fixtures import fixture_data, config, lookup_test_event
 
-# import logging
-# logging.basicConfig(level=logging.INFO)
-
-
-fixture_data()
-
 
 class Testcases(unittest.TestCase):
 
     def setUp(self):
-        self.lookup.clear_proposal_buffer()
-        self.lookup.clear_direct_buffer()
+        fixture_data()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        fixture_data()
         self.lookup = LookupSport("AmericanFootball")
         self.lookup.set_approving_account("init0")
 

@@ -74,7 +74,7 @@ def add_event(data):
 
 
 def fixture_data():
-    peerplays.clear()
+    ppy.clear()
     BettingMarkets.clear_cache()
     Rules.clear_cache()
     BettingMarketGroups.clear_cache()
