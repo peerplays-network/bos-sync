@@ -6,6 +6,7 @@ from dateutil.parser import parse
 
 from peerplays import PeerPlays
 from peerplays.instance import set_shared_peerplays_instance
+from peerplays.account import Account
 from peerplays.sport import Sports, Sport
 from peerplays.event import Events, Event
 from peerplays.rule import Rules, Rule
@@ -50,6 +51,9 @@ lookup = Lookup(
         os.path.dirname(os.path.realpath(__file__)), "bookiesports"
     ),
 )
+# lookup.set_approving_account("init1")
+# lookup.set_proposing_account("init0")
+
 # ensure lookup isn't broadcasting either
 assert lookup.blockchain.nobroadcast
 
@@ -86,11 +90,6 @@ def lookup_test_eventgroup(id):
     return LookupEventGroup("Basketball", "NBA")
 
 
-def add_event(data):
-    if "event_group_id" in data:
-        Events._cache[data["event_group_id"]].append(data)
-
-
 def fixture_data():
     peerplays.clear()
     BettingMarkets.clear_cache()
@@ -107,13 +106,25 @@ def fixture_data():
 
     Witnesses.cache_objects([Witness(x) for x in data.get("witnesses", [])])
     Sports.cache_objects([Sport(x) for x in data.get("sports", [])])
-    EventGroups.cache_objects([EventGroup(x) for x in data.get("eventgroups", [])])
-    Events.cache_objects([Event(x) for x in data.get("events", [])])
-    BettingMarketGroups.cache_objects(
-        [BettingMarketGroup(x) for x in data.get("bettingmarketgroups", [])]
-    )
-    BettingMarkets.cache_objects([BettingMarket(x) for x in data.get("bettingmarkets", [])])
+
+    for evg in data.get("eventgroups", []):
+        EventGroups.cache_objects([EventGroup(evg)], key=evg["sport_id"])
+
+    for event in data.get("events", []):
+        Events.cache_objects([Event(event)], key=event["event_group_id"])
+
+    for bmg in data.get("bettingmarketgroups", []):
+        BettingMarketGroups.cache_objects(
+            [BettingMarketGroup(bmg)], key=bmg["event_id"]
+        )
+
+    for bm in data.get("bettingmarkets", []):
+        BettingMarkets.cache_objects([BettingMarketGroup(bm)], bm["group_id"])
+
     Rules.cache_objects([Rule(x) for x in data.get("rules", [])])
+    for x in data.get("accounts", []):
+        Account.cache_object(x, x["name"])
+        Account.cache_object(x, x["id"])
 
     proposals = []
     for proposal in data.get("proposals", []):

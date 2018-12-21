@@ -6,8 +6,7 @@ from .utils import dList2Dict
 from peerplays.event import Event
 from peerplays.rule import Rule
 from peerplays.asset import Asset
-from peerplays.bettingmarketgroup import (
-    BettingMarketGroups, BettingMarketGroup)
+from peerplays.bettingmarketgroup import BettingMarketGroups, BettingMarketGroup
 from . import log, comparators
 from .substitutions import substitute_bettingmarket_name
 
@@ -25,40 +24,21 @@ class LookupBettingMarketGroup(Lookup, dict):
     operation_update = "betting_market_group_update"
     operation_create = "betting_market_group_create"
 
-    def __init__(
-        self,
-        bmg,
-        event,
-        extra_data={}
-    ):
+    def __init__(self, bmg, event, extra_data={}):
         Lookup.__init__(self)
         self.event = event
         self.parent = event
         # Let's predefine dynamic matrial
         dict.__init__(self, extra_data)
-        dict.update(self, dict(
-            handicaps=[0, 0],
-            overunder=0
-        ))
-        dict.update(
-            self,
-            bmg
-        )
-        for mandatory in [
-            "description",
-            "asset",
-            "bettingmarkets",
-            "rules",
-        ]:
+        dict.update(self, dict(handicaps=[0, 0], overunder=0))
+        dict.update(self, bmg)
+        for mandatory in ["description", "asset", "bettingmarkets", "rules"]:
             if mandatory not in self:
                 raise MissingMandatoryValue(
-                    "A value for '{}' is mandatory".format(
-                        mandatory
-                    )
+                    "A value for '{}' is mandatory".format(mandatory)
                 )
         self.identifier = "{}/{}".format(
-            dList2Dict(event.names)["en"],
-            dList2Dict(self.description)["en"]
+            dList2Dict(event.names)["en"], dList2Dict(self.description)["en"]
         )
 
     @property
@@ -78,18 +58,23 @@ class LookupBettingMarketGroup(Lookup, dict):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_required_keys([
-                "betting_market_group_id", "new_description",
-                "new_event_id", "new_rules_id"
-            ], [
-                "betting_market_group_id", "description",
-                "event_id", "rules_id"
-            ]),
-            comparators.cmp_status(),
-            comparators.cmp_event(),
-            comparators.cmp_all_description()
-        ])
+        test_operation_equal_search = kwargs.get(
+            "test_operation_equal_search",
+            [
+                comparators.cmp_required_keys(
+                    [
+                        "betting_market_group_id",
+                        "new_description",
+                        "new_event_id",
+                        "new_rules_id",
+                    ],
+                    ["betting_market_group_id", "description", "event_id", "rules_id"],
+                ),
+                comparators.cmp_status(),
+                comparators.cmp_event(),
+                comparators.cmp_all_description(),
+            ],
+        )
 
         """ We need to properly deal with the fact that betting market groups
             cannot be distinguished alone from the payload if they are bundled
@@ -101,15 +86,21 @@ class LookupBettingMarketGroup(Lookup, dict):
             full_proposal = kwargs.get("proposal", {})
             if full_proposal:
                 operation_id = int(event_id.split(".")[2])
-                parent_op = dict(full_proposal)["proposed_transaction"]["operations"][operation_id]
-                if not self.parent.test_operation_equal(parent_op[1], proposal=full_proposal):
+                parent_op = dict(full_proposal)["proposed_transaction"]["operations"][
+                    operation_id
+                ]
+                if not self.parent.test_operation_equal(
+                    parent_op[1], proposal=full_proposal
+                ):
                     return False
 
-        if all([
-            # compare by using 'all' the funcs in find_id_search
-            func(self, bmg)
-            for func in test_operation_equal_search
-        ]):
+        if all(
+            [
+                # compare by using 'all' the funcs in find_id_search
+                func(self, bmg)
+                for func in test_operation_equal_search
+            ]
+        ):
             """ This is special!
 
                 Since we allow fuzzy logic for matching dynamic parameters, we
@@ -132,25 +123,28 @@ class LookupBettingMarketGroup(Lookup, dict):
         """
         # In case the parent is a proposal, we won't
         # be able to find an id for a child
-        parent_id = self.parent_id
+        parent_id = self.parent.get_id(skip_proposals=False)
         if not self.valid_object_id(parent_id):
             return
 
-        bmgs = BettingMarketGroups(
-            self.parent_id,
-            peerplays_instance=self.peerplays)
+        bmgs = BettingMarketGroups(self.parent_id, peerplays_instance=self.peerplays)
 
-        find_id_search = kwargs.get("find_id_search", [
-            # We compare only the 'eng' content by default
-            comparators.cmp_description("en"),
-        ])
+        find_id_search = kwargs.get(
+            "find_id_search",
+            [
+                # We compare only the 'eng' content by default
+                comparators.cmp_description("en")
+            ],
+        )
 
         for bmg in bmgs:
-            if all([
-                # compare by using 'all' the funcs in find_id_search
-                func(self, bmg)
-                for func in find_id_search
-            ]):
+            if all(
+                [
+                    # compare by using 'all' the funcs in find_id_search
+                    func(self, bmg)
+                    for func in find_id_search
+                ]
+            ):
                 """ This is special!
 
                     Since we allow fuzzy logic for matching dynamic parameters, we
@@ -175,9 +169,7 @@ class LookupBettingMarketGroup(Lookup, dict):
     def propose_new(self):
         """ Propose operation to create this object
         """
-        asset = Asset(
-            self["asset"],
-            peerplays_instance=self.peerplays)
+        asset = Asset(self["asset"], peerplays_instance=self.peerplays)
         return self.peerplays.betting_market_group_create(
             self.description,
             event_id=self.event.id,
@@ -186,7 +178,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             delay_before_settling=self.get("delay_before_settling", 0),
             never_in_play=self.get("never_in_play", False),
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     def propose_update(self):
@@ -199,7 +191,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             rules_id=self.rules.id,
             status=self.get("status"),
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     @property
@@ -218,14 +210,11 @@ class LookupBettingMarketGroup(Lookup, dict):
                 teams=self.event["teams"],
                 handicaps=self.get("handicaps"),
                 overunder=self.get("overunder"),
-                handicap_allow_float=self.allow_float
+                handicap_allow_float=self.allow_float,
             )
 
             # Yield one Lookup per betting market
-            yield LookupBettingMarket(
-                description=description,
-                bmg=self
-            )
+            yield LookupBettingMarket(description=description, bmg=self)
 
         if bm_counter != int(self["number_betting_markets"]):
             log.critical(
@@ -233,7 +222,8 @@ class LookupBettingMarketGroup(Lookup, dict):
                 "Event: {} / BMG: {} / {}!={}".format(
                     self.parent["name"]["en"],
                     self["description"]["en"],
-                    bm_counter, self["number_betting_markets"]
+                    bm_counter,
+                    self["number_betting_markets"],
                 )
             )
 
@@ -246,7 +236,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             teams=self.event["teams"],
             handicaps=self.get("handicaps"),
             overunder=self.get("overunder"),
-            handicap_allow_float=self.allow_float
+            handicap_allow_float=self.allow_float,
         )
         if self.get("dynamic") == "hc":
             description["_dynamic"] = "hc"
@@ -257,12 +247,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             description["_dynamic"] = "ou"
             description["_ou"] = str(self.get("overunder"))
 
-        return [
-            [
-                k,
-                v
-            ] for k, v in description.items()
-        ]
+        return [[k, v] for k, v in description.items()]
 
     def set_overunder(self, ou):
         self["overunder"] = math.floor(float(ou)) + 0.5
@@ -285,16 +270,20 @@ class LookupBettingMarketGroup(Lookup, dict):
         """
         if (home is None and away is not None) or float(home) == 0.0:
             if self.allow_float:
-                away = math.copysign(math.floor(math.fabs(float(away))) + 0.5, float(away))
+                away = math.copysign(
+                    math.floor(math.fabs(float(away))) + 0.5, float(away)
+                )
             else:
                 away = float(away)
 
-            home = -away   # Symmetry
+            home = -away  # Symmetry
 
         elif (away is None and home is not None) or float(away) == 0.0:
             away = 0
             if self.allow_float:
-                home = math.copysign(math.floor(math.fabs(float(home))) + 0.5, float(home))
+                home = math.copysign(
+                    math.floor(math.fabs(float(home))) + 0.5, float(home)
+                )
             else:
                 home = int(float(home))
 
@@ -333,14 +322,14 @@ class LookupBettingMarketGroup(Lookup, dict):
         description = dList2Dict(operation["description"])
         if "_dynamic" in description:
             if (
-                LookupBettingMarketGroup.is_hc_type(description["_dynamic"]) and
-                "_hch" in description
+                LookupBettingMarketGroup.is_hc_type(description["_dynamic"])
+                and "_hch" in description
             ):
                 log.info("Setting handicap: {}".format(description["_hch"]))
                 self.set_handicaps(home=description["_hch"])
             elif (
-                LookupBettingMarketGroup.is_ou_type(description["_dynamic"]) and
-                "_ou" in description
+                LookupBettingMarketGroup.is_ou_type(description["_dynamic"])
+                and "_ou" in description
             ):
                 log.info("Setting overunder: {}".format(description["_ou"]))
                 self.set_overunder(description["_ou"])

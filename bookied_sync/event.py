@@ -6,6 +6,7 @@ from .bettingmarketgroup import LookupBettingMarketGroup
 from peerplays.event import Event, Events
 from peerplays.utils import formatTime
 from peerplays.utils import parse_time
+
 # from . import log
 from . import comparators
 from .utils import dList2Dict
@@ -13,16 +14,12 @@ from .utils import dList2Dict
 
 def substitution(teams, scheme):
     class Teams:
-        home = " ".join([
-            x for x in teams[0].split(" ")])
-        away = " ".join([
-            x for x in teams[1].split(" ")])
+        home = " ".join([x for x in teams[0].split(" ")])
+        away = " ".join([x for x in teams[1].split(" ")])
 
     ret = dict()
     for lang, name in scheme.items():
-        ret[lang] = name.format(
-            teams=Teams
-        )
+        ret[lang] = name.format(teams=Teams)
     return ret
 
 
@@ -48,8 +45,8 @@ class LookupEvent(Lookup, dict):
     def __init__(
         self,
         teams,
-        eventgroup_identifier,   # not actually required, FIXME cleanup
-        sport_identifier,        # not actually required, FIXME cleanup
+        eventgroup_identifier,  # not actually required, FIXME cleanup
+        sport_identifier,  # not actually required, FIXME cleanup
         season={},
         start_time=None,
         id=None,
@@ -63,13 +60,17 @@ class LookupEvent(Lookup, dict):
             dict.update(self, dict(Event(id)))
         # Also store all the stuff in kwargs
         dict.__init__(self, extra_data)
-        dict.update(self, {
-            "teams": teams,
-            "eventgroup_identifier": eventgroup_identifier,
-            "sport_identifier": sport_identifier,
-            "season": season,
-            "start_time": start_time,
-            "id": id})
+        dict.update(
+            self,
+            {
+                "teams": teams,
+                "eventgroup_identifier": eventgroup_identifier,
+                "sport_identifier": sport_identifier,
+                "season": season,
+                "start_time": start_time,
+                "id": id,
+            },
+        )
 
         # Define "id" if not present
         self["id"] = self.get("id", None)
@@ -82,45 +83,29 @@ class LookupEvent(Lookup, dict):
 
         self.parent = self.eventgroup
         self.identifier = "{}/{}/{}".format(
-            self.parent["name"]["en"],
-            teams[0],
-            teams[1])
+            self.parent["name"]["en"], teams[0], teams[1]
+        )
 
-        if start_time and not isinstance(
-            self["start_time"], datetime
-        ):
-            raise ValueError(
-                "'start_time' must be instance of datetime.datetime()")
+        if start_time and not isinstance(self["start_time"], datetime):
+            raise ValueError("'start_time' must be instance of datetime.datetime()")
         else:
             # remove offset
             self["start_time"] = self["start_time"].replace(tzinfo=None)
 
         if not isinstance(self["season"], dict):
-            raise ValueError(
-                "'season' must be (language) dictionary")
+            raise ValueError("'season' must be (language) dictionary")
 
         if not self.test_teams_valid():
-            raise ValueError(
-                "Team names not known: {}".format(
-                    str(self["teams"])))
+            raise ValueError("Team names not known: {}".format(str(self["teams"])))
 
         # Initialize name key
         dict.update(self, dict(name=dList2Dict(self.names)))
 
     def test_teams_valid(self):
-        return all(
-            self.participants.is_participant(t)
-            for t in self["teams"]
-        )
+        return all(self.participants.is_participant(t) for t in self["teams"])
 
     @classmethod
-    def find_event(
-        cls,
-        sport_identifier,
-        eventgroup_identifier,
-        teams,
-        start_time
-    ):
+    def find_event(cls, sport_identifier, eventgroup_identifier, teams, start_time):
         """ This class method is used to find an event by providing:
 
             :param str sport_identifier: Identifier string for the sport
@@ -138,8 +123,8 @@ class LookupEvent(Lookup, dict):
         names = [[k, v] for k, v in names.items()]
         for event in events:
             if (
-                any([x in event["name"] for x in names]) and
-                formatTime(start_time) == event["start_time"]
+                any([x in event["name"] for x in names])
+                and formatTime(start_time) == event["start_time"]
             ):
                 return cls(
                     id=event["id"],
@@ -170,33 +155,35 @@ class LookupEvent(Lookup, dict):
         """ Get the event group that corresponds to this event
         """
         sport = LookupSport(self["sport_identifier"])
-        return(LookupEventGroup(
-            sport["identifier"],
-            self["eventgroup_identifier"]))
+        return LookupEventGroup(sport["identifier"], self["eventgroup_identifier"])
 
     def test_operation_equal(self, event, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
 
-        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_required_keys([
-                "event_group_id", "new_name", "new_status"
-            ], [
-                "event_group_id", "name", "status"
-            ]),
-            comparators.cmp_all_name(),
-            comparators.cmp_status(),
-            comparators.cmp_season(),
-            comparators.cmp_start_time(),
-            comparators.cmp_event_group(),
-        ])
+        test_operation_equal_search = kwargs.get(
+            "test_operation_equal_search",
+            [
+                comparators.cmp_required_keys(
+                    ["event_group_id", "new_name", "new_status"],
+                    ["event_group_id", "name", "status"],
+                ),
+                comparators.cmp_all_name(),
+                comparators.cmp_status(),
+                comparators.cmp_season(),
+                comparators.cmp_start_time(),
+                comparators.cmp_event_group(),
+            ],
+        )
 
-        if all([
-            # compare by using 'all' the funcs in find_id_search
-            func(self, event)
-            for func in test_operation_equal_search
-        ]):
+        if all(
+            [
+                # compare by using 'all' the funcs in find_id_search
+                func(self, event)
+                for func in test_operation_equal_search
+            ]
+        ):
             return True
         return False
 
@@ -213,22 +200,25 @@ class LookupEvent(Lookup, dict):
         if not self.valid_object_id(parent_id):
             return
 
-        events = Events(
-            self.parent_id,
-            peerplays_instance=self.peerplays)
+        events = Events(self.parent_id, peerplays_instance=self.peerplays)
 
-        find_id_search = kwargs.get("find_id_search", [
-            comparators.cmp_name("en"),
-            comparators.cmp_start_time(),
-            comparators.cmp_event_group()
-        ])
+        find_id_search = kwargs.get(
+            "find_id_search",
+            [
+                comparators.cmp_name("en"),
+                comparators.cmp_start_time(),
+                comparators.cmp_event_group(),
+            ],
+        )
 
         for event in events:
-            if all([
-                # compare by using 'all' the funcs in find_id_search
-                func(self, event)
-                for func in find_id_search
-            ]):
+            if all(
+                [
+                    # compare by using 'all' the funcs in find_id_search
+                    func(self, event)
+                    for func in find_id_search
+                ]
+            ):
                 return event["id"]
 
     def is_synced(self):
@@ -249,7 +239,7 @@ class LookupEvent(Lookup, dict):
             self["start_time"],
             event_group_id=self.parent_id,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     def propose_update(self):
@@ -263,7 +253,7 @@ class LookupEvent(Lookup, dict):
             event_group_id=self.parent_id,
             account=self.proposing_account,
             status=self.get("status"),
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     @property
@@ -271,9 +261,9 @@ class LookupEvent(Lookup, dict):
         """ Return content of participants in this event
         """
         from .participant import LookupParticipants
+
         name = self.eventgroup["participants"]
-        return LookupParticipants(
-            self["sport_identifier"], name)
+        return LookupParticipants(self["sport_identifier"], name)
 
     def lookup_bettingmarketgroups(self):
         """ Return content of betting market groups
@@ -295,23 +285,13 @@ class LookupEvent(Lookup, dict):
         teams = self["teams"]
         scheme = self.eventscheme.get("name", {})
         items = substitution(teams, scheme)
-        return [
-            [
-                k,
-                v
-            ] for k, v in items.items()
-        ]
+        return [[k, v] for k, v in items.items()]
 
     @property
     def season(self):
         """ Properly format season for internal use
         """
-        return [
-            [
-                k,
-                v
-            ] for k, v in self["season"].items()
-        ]
+        return [[k, v] for k, v in self["season"].items()]
 
     @property
     def eventscheme(self):
@@ -328,6 +308,7 @@ class LookupEvent(Lookup, dict):
 
     def status_update(self, status, scores=[]):
         from .eventstatus import LookupEventStatus
+
         status = LookupEventStatus(self, status, scores=scores)
         return status.update()
 
@@ -360,7 +341,7 @@ class LookupEvent(Lookup, dict):
         """
         evg = self.eventgroup
         start_time = self.get("start_time", datetime.utcnow())
-        return (start_time - timedelta(days=evg.leadtime_Max))
+        return start_time - timedelta(days=evg.leadtime_Max)
 
     @property
     def event_group_id(self):
