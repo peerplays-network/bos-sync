@@ -1,8 +1,6 @@
 from .lookup import Lookup
 from .rule import LookupRules
-from peerplays.bettingmarketgroup import (
-    BettingMarketGroup
-)
+from peerplays.bettingmarketgroup import BettingMarketGroup
 from bookied_sync.utils import dList2Dict
 from peerplays.rule import Rule
 from .substitutions import substitute_metric
@@ -18,31 +16,19 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
     operation_update = None
     operation_create = "betting_market_group_resolve"
 
-    def __init__(
-        self,
-        bmg,
-        result,
-        handicaps=None,
-        overunder=None,
-        extra_data={}
-    ):
+    def __init__(self, bmg, result, handicaps=None, overunder=None, extra_data={}):
         Lookup.__init__(self)
-        self.identifier = "{}::resolution".format(
-            dList2Dict(bmg.description)["en"],
-        )
+        self.identifier = "{}::resolution".format(dList2Dict(bmg.description)["en"])
         self.parent = bmg
         dict.__init__(self, extra_data)
         dict.update(self, bmg)
 
-        assert isinstance(result, list) and len(result) == 2, \
-            "Result must be a list of length 2."
+        assert (
+            isinstance(result, list) and len(result) == 2
+        ), "Result must be a list of length 2."
         handicaps = handicaps or [0, 0]
         overunder = overunder or 0
-        dict.update(self, dict(
-            result=result,
-            handicaps=handicaps,
-            overunder=overunder
-        ))
+        dict.update(self, dict(result=result, handicaps=handicaps, overunder=overunder))
 
         # We here direct the handicaps and overunders through BettingMarket
         # Group of the parent and load it from there again to allow
@@ -52,10 +38,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             self["overunder"] = self.parent["overunder"]
 
         if any(handicaps):
-            self.parent.set_handicaps(
-                home=handicaps[0],
-                away=handicaps[1]
-            )
+            self.parent.set_handicaps(home=handicaps[0], away=handicaps[1])
             self["handicaps"] = self.parent["handicaps"]
 
     @property
@@ -105,7 +88,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             result=self["result"],
             handicaps=self["handicaps"],
             overunder=self["overunder"],
-            handicap_allow_float=self.parent.allow_float
+            handicap_allow_float=self.parent.allow_float,
         )
 
     def _equation(self, eq):
@@ -115,16 +98,14 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             result=self["result"],
             handicaps=self["handicaps"],
             overunder=self["overunder"],
-            handicap_allow_float=self.parent.allow_float
+            handicap_allow_float=self.parent.allow_float,
         )
 
     @property
     def metric(self):
         s = self._metric
         if not isinstance(s, str):
-            raise ValueError(
-                "metric must be string, was {}".format(
-                    type(s)))
+            raise ValueError("metric must be string, was {}".format(type(s)))
         try:
             metric = eval(s)
         except Exception:
@@ -134,10 +115,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
     def evaluate_metric(self, equation):
         # Define variables we want to use when grading
         if not isinstance(equation, str):
-            raise ValueError(
-                "equation must be string, was {}".format(
-                    type(equation)
-                ))
+            raise ValueError("equation must be string, was {}".format(type(equation)))
         equation = self._equation(equation)
         try:
             metric = eval(equation)
@@ -165,20 +143,18 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             bettingmarket = next(bettingmarkets)
 
             resolved = {
-                key: self.evaluate_metric(equation)
-                for key, equation in market.items()
+                key: self.evaluate_metric(equation) for key, equation in market.items()
             }
             # The resolved dictionary looks like this
             # {'win': False, 'not_win': True, 'void': False}
             # we now need to ensure that only one of those options is 'true'
-            assert sum(resolved.values()) == 1, \
-                "Multiple or no options resolved to 'True': {}".format(
-                    str(resolved))
+            assert (
+                sum(resolved.values()) == 1
+            ), "Multiple or no options resolved to 'True': {}".format(str(resolved))
 
-            ret.extend([
-                [bettingmarket.id, key]
-                for key, value in resolved.items() if value
-            ])
+            ret.extend(
+                [[bettingmarket.id, key] for key, value in resolved.items() if value]
+            )
 
         return ret
 
@@ -195,9 +171,9 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
         test_bmg = self.valid_object_id(bmg_id, BettingMarketGroup)
 
         if (
-            all([a in chainsresults for a in lookupresults]) and
-            all([b in lookupresults for b in chainsresults]) and
-            (not test_bmg or bmg_id == self.parent_id)
+            all([a in chainsresults for a in lookupresults])
+            and all([b in lookupresults for b in chainsresults])
+            and (not test_bmg or bmg_id == self.parent_id)
         ):
             return True
         return False
@@ -220,7 +196,7 @@ class LookupBettingMarketGroupResolve(Lookup, dict):
             self.parent_id,
             self.resolutions,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     def propose_update(self):

@@ -3,6 +3,7 @@ from .lookup import Lookup
 from .event import LookupEvent
 from peerplays.event import Event, Events
 from peerplays.utils import formatTime, parse_time
+
 # from . import log
 
 
@@ -25,36 +26,24 @@ class LookupEventStatus(Lookup, dict):
     operation_update = "event_update_status"
     operation_create = "event_update_status"
 
-    def __init__(
-        self,
-        event,
-        status,
-        scores=[],
-        id=None,
-        extra_data={},
-        **kwargs
-    ):
+    def __init__(self, event, status, scores=[], id=None, extra_data={}, **kwargs):
         Lookup.__init__(self)
         assert isinstance(event, LookupEvent)
         self.parent = event
 
         # Also store all the stuff in kwargs
         dict.__init__(self, extra_data)
-        dict.update(self, {
-            "status": status,
-            "scores": scores,
-            "event": event})
-        self.identifier = "{} -> {}".format(
-            event["name"]["en"], status)
+        dict.update(self, {"status": status, "scores": scores, "event": event})
+        self.identifier = "{} -> {}".format(event["name"]["en"], status)
 
     def test_operation_equal(self, op, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
         if (
-            self["event"]["id"] == op["event_id"] and
-            self["scores"] == op["scores"] and
-            self["status"] == op["status"]
+            self["event"]["id"] == op["event_id"]
+            and self["scores"] == op["scores"]
+            and self["status"] == op["status"]
         ):
             return True
 
@@ -84,5 +73,5 @@ class LookupEventStatus(Lookup, dict):
             status=self["status"],
             scores=self["scores"],
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )

@@ -7,7 +7,6 @@ from bookied_sync.participant import LookupParticipants
 
 
 class Testcases(unittest.TestCase):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -15,17 +14,11 @@ class Testcases(unittest.TestCase):
         Lookup(
             network="unittests",
             sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
+                os.path.dirname(os.path.realpath(__file__)), "bookiesports"
             ),
-            peerplays_instance=PeerPlays(
-                nobroadcast=True,
-            )
+            peerplays_instance=PeerPlays(nobroadcast=True),
         )
-        self.lookup = LookupParticipants(
-            "AmericanFootball",
-            "NFL_Teams_2017-18"
-        )
+        self.lookup = LookupParticipants("AmericanFootball", "NFL_Teams_2017-18")
 
     def test_init(self):
         self.assertIsInstance(self.lookup, dict)

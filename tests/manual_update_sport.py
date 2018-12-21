@@ -7,19 +7,16 @@ from bookied_sync.lookup import Lookup
 from bookied_sync.sport import LookupSport
 from peerplays.instance import set_shared_blockchain_instance
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 UNLOCK = ""
 
-ppy = PeerPlays(
-    nobroadcast=False,
-    blocking=True
-)
+ppy = PeerPlays(nobroadcast=False, blocking=True)
 set_shared_blockchain_instance(ppy)
 
 
 class Testcases(unittest.TestCase):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,10 +24,9 @@ class Testcases(unittest.TestCase):
         Lookup(
             network="unittests",
             sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
+                os.path.dirname(os.path.realpath(__file__)), "bookiesports"
             ),
-            peerplays_instance=ppy
+            peerplays_instance=ppy,
         )
         self.lookup = LookupSport("AmericanFootball")
 

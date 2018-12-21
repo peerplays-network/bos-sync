@@ -1,5 +1,3 @@
-
-
 def decode_variables(**kwargs):
     """ This method simplyfies dealing with substitutions. It replaces the
         keywords (teams, result, ..) with instances of the below defined classes
@@ -21,6 +19,7 @@ def decode_variables(**kwargs):
 class Result:
     """ Defines a few variables to be used in conjuctions with {result.X}
     """
+
     def __init__(self, **kwargs):
         result = kwargs.get("result", [0, 0]) or [0, 0]
         self.hometeam = result[0]
@@ -36,17 +35,17 @@ class Result:
 class Teams:
     """ Defines a few variables to be used in conjuctions with {teams.X}
     """
+
     def __init__(self, **kwargs):
         teams = kwargs.get("teams", ["", ""]) or ["", ""]
-        self.home = " ".join([
-            x.capitalize() for x in teams[0].split(" ")])
-        self.away = " ".join([
-            x.capitalize() for x in teams[1].split(" ")])
+        self.home = " ".join([x.capitalize() for x in teams[0].split(" ")])
+        self.away = " ".join([x.capitalize() for x in teams[1].split(" ")])
 
 
 class Handicaps:
     """ Defines a few variables to be used in conjuctions with {handicaps.X}
     """
+
     def __init__(self, **kwargs):
         handicaps = kwargs.get("handicaps", [0, 0]) or [0, 0]
 
@@ -72,6 +71,7 @@ class Handicaps:
 class OverUnder:
     """ Defines a few variables to be used in conjuctions with {handicaps.X}
     """
+
     def __init__(self, **kwargs):
         # store value
         self.value = float(kwargs.get("overunder", 0) or 0)

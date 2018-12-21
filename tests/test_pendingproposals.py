@@ -13,7 +13,6 @@ from .fixtures import fixture_data, config, lookup_test_event
 
 
 class Testcases(unittest.TestCase):
-
     def setUp(self):
         fixture_data()
 
@@ -48,10 +47,7 @@ class Testcases(unittest.TestCase):
         def mockedClass(m, *args, **kwargs):
             return False
 
-        with mock.patch(
-            "bookied_sync.sport.LookupSport.find_id",
-            new=mockedClass
-        ):
+        with mock.patch("bookied_sync.sport.LookupSport.find_id", new=mockedClass):
             self.lookup.pop("id", None)
             self.assertEqual(self.lookup.id, "0.0.0")
 
@@ -60,11 +56,5 @@ class Testcases(unittest.TestCase):
         # this is supposed to be an update of the proposal 1.10.1
         tx = self.lookup.direct_buffer
         self.assertEqual(tx["operations"][0][0], 23)
-        self.assertEqual(
-            tx["operations"][0][1]["proposal"],
-            "1.10.1",
-        )
-        self.assertIn(
-            "1.2.7",
-            tx["operations"][0][1]["active_approvals_to_add"]
-        )
+        self.assertEqual(tx["operations"][0][1]["proposal"], "1.10.1")
+        self.assertIn("1.2.7", tx["operations"][0][1]["active_approvals_to_add"])
