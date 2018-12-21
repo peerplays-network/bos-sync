@@ -19,6 +19,7 @@ class LookupEventGroup(Lookup, dict):
 
     def __init__(self, sport, eventgroup):
         from .sport import LookupSport
+
         self.identifier = eventgroup
 
         if isinstance(sport, LookupSport):
@@ -31,52 +32,54 @@ class LookupEventGroup(Lookup, dict):
         super(LookupEventGroup, self).__init__()
 
         if eventgroup.lower() in self.data["sports"][sport]["eventgroups"]:
-            dict.__init__(
-                self,
-                self.data["sports"][sport]["eventgroups"][eventgroup]
-            )
+            dict.__init__(self, self.data["sports"][sport]["eventgroups"][eventgroup])
         else:
             found = False
             for name, evg in self.data["sports"][sport]["eventgroups"].items():
                 if (
                     # Name
-                    name.lower() == eventgroup.lower() or
+                    name.lower() == eventgroup.lower()
+                    or
                     # Identifier
-                    evg.get("identifier", "").lower() == eventgroup.lower() or
+                    evg.get("identifier", "").lower() == eventgroup.lower()
+                    or
                     # List of languages
-                    eventgroup.lower() in [
-                        x.lower()for x in evg.get("name", {}).values()] or
+                    eventgroup.lower()
+                    in [x.lower() for x in evg.get("name", {}).values()]
+                    or
                     # List of aliases
-                    eventgroup.lower() in [
-                        x.lower() for x in evg.get("aliases", [])]
+                    eventgroup.lower() in [x.lower() for x in evg.get("aliases", [])]
                 ):
                     found = True
                     dict.__init__(self, evg)
 
             if not found:
                 raise ObjectNotFoundInLookup(
-                    "Eventgroup {} not available in sport {}".format(
-                        eventgroup, sport))
+                    "Eventgroup {} not available in sport {}".format(eventgroup, sport)
+                )
 
     def test_operation_equal(self, eventgroup, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_required_keys([
-                "sport_id", "new_name"
-            ], [
-                "sport_id", "name"
-            ]),
-            comparators.cmp_all_name(),
-            comparators.cmp_sport(),
-        ])
+        test_operation_equal_search = kwargs.get(
+            "test_operation_equal_search",
+            [
+                comparators.cmp_required_keys(
+                    ["sport_id", "new_name"], ["sport_id", "name"]
+                ),
+                comparators.cmp_all_name(),
+                comparators.cmp_sport(),
+            ],
+        )
 
-        if all([
-            # compare by using 'all' the funcs in find_id_search
-            func(self, eventgroup)
-            for func in test_operation_equal_search
-        ]):
+        if all(
+            [
+                # compare by using 'all' the funcs in find_id_search
+                func(self, eventgroup)
+                for func in test_operation_equal_search
+            ]
+        ):
             return True
         return False
 
@@ -93,21 +96,21 @@ class LookupEventGroup(Lookup, dict):
         if not self.valid_object_id(parent_id):
             return
 
-        egs = EventGroups(
-            self.parent_id,
-            peerplays_instance=self.peerplays)
+        egs = EventGroups(self.parent_id, peerplays_instance=self.peerplays)
 
-        find_id_search = kwargs.get("find_id_search", [
-            comparators.cmp_name("identifier"),
-            comparators.cmp_sport()
-        ])
+        find_id_search = kwargs.get(
+            "find_id_search",
+            [comparators.cmp_name("identifier"), comparators.cmp_sport()],
+        )
 
         for eg in egs:
-            if all([
-                # compare by using 'all' the funcs in find_id_search
-                func(self, eg)
-                for func in find_id_search
-            ]):
+            if all(
+                [
+                    # compare by using 'all' the funcs in find_id_search
+                    func(self, eg)
+                    for func in find_id_search
+                ]
+            ):
                 return eg["id"]
 
     def is_synced(self):
@@ -126,7 +129,7 @@ class LookupEventGroup(Lookup, dict):
             self.names,
             sport_id=self.parent_id,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     def propose_update(self):
@@ -137,7 +140,7 @@ class LookupEventGroup(Lookup, dict):
             names=self.names,
             sport_id=self.parent_id,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     @property
@@ -152,12 +155,7 @@ class LookupEventGroup(Lookup, dict):
         """
         names = self["name"]
         names.update({"identifier": self["identifier"]})
-        return [
-            [
-                k,
-                v
-            ] for k, v in names.items()
-        ]
+        return [[k, v] for k, v in names.items()]
 
     @property
     def is_open(self):

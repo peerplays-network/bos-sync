@@ -28,18 +28,15 @@ start_time = parse_time("2018-05-30T02:05:00")
 
 test_operation_dict = {
     "id": event_id,
-    "name": [
-        ['en', 'Boston Celtics @ Atlanta Hawks']
-    ],
+    "name": [["en", "Boston Celtics @ Atlanta Hawks"]],
     "event_group_id": event_group_id,
     "season": [["en", "2017"]],
     "status": "upcoming",
-    "start_time": "2022-10-16T00:00:00"
+    "start_time": "2022-10-16T00:00:00",
 }
 
 
 class Testcases(unittest.TestCase):
-
     def setUp(self):
         fixture_data()
 
@@ -75,5 +72,5 @@ class Testcases(unittest.TestCase):
 
         # The second event is identical but has different teams
         t = test_operation_dict.copy()
-        t["name"] = [["en", "Demo2 : Foobar"], ['en_us', 'Foobar @ Demo2']]
+        t["name"] = [["en", "Demo2 : Foobar"], ["en_us", "Foobar @ Demo2"]]
         self.assertFalse(self.lookup.test_operation_equal(t))

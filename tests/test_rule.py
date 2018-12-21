@@ -21,16 +21,21 @@ from .fixtures import fixture_data, config, lookup_test_event
 
 rule_id = "1.23.12"
 test_operation_dicts = [
-    {"name": [["en", "R_NBA_OU_1"],
-              ["identifier", "R_NBA_OU_1"]],
-     "id": rule_id,
-     "description": [["en", "Foobar"],
-                     ["grading", '{"metric": "{result.total}", "resolutions": [{"not_win": "{metric} > {overunder.value}", "void": "False", "win": "{metric} <= {overunder.value}"}, {"not_win": "{metric} <= {overunder.value}", "void": "False", "win": "{metric} > {overunder.value}"}]}']]}
+    {
+        "name": [["en", "R_NBA_OU_1"], ["identifier", "R_NBA_OU_1"]],
+        "id": rule_id,
+        "description": [
+            ["en", "Foobar"],
+            [
+                "grading",
+                '{"metric": "{result.total}", "resolutions": [{"not_win": "{metric} > {overunder.value}", "void": "False", "win": "{metric} <= {overunder.value}"}, {"not_win": "{metric} <= {overunder.value}", "void": "False", "win": "{metric} > {overunder.value}"}]}',
+            ],
+        ],
+    }
 ]
 
 
 class Testcases(unittest.TestCase):
-
     def setUp(self):
         fixture_data()
 
@@ -55,6 +60,7 @@ class Testcases(unittest.TestCase):
 
     def test_propose_new(self):
         from peerplaysbase.operationids import operations
+
         self.lookup.clear_proposal_buffer()
         tx = self.lookup.propose_new()
         tx = tx.json()
@@ -64,7 +70,7 @@ class Testcases(unittest.TestCase):
         self.assertEqual(tx["operations"][0][0], 22)
         self.assertEqual(
             tx["operations"][0][1]["proposed_ops"][0]["op"][0],
-            operations[self.lookup.operation_create]
+            operations[self.lookup.operation_create],
         )
 
     def test_propose_update(self):
@@ -80,5 +86,5 @@ class Testcases(unittest.TestCase):
         self.assertEqual(tx["operations"][0][0], 22)
         self.assertEqual(
             tx["operations"][0][1]["proposed_ops"][0]["op"][0],
-            operations[self.lookup.operation_update]
+            operations[self.lookup.operation_update],
         )
