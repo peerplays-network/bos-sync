@@ -14,14 +14,11 @@ class LookupParticipants(Lookup, dict):
     def __init__(self, sport, list_identifier):
         self.identifier = "{}/{}".format(sport, list_identifier)
         super(LookupParticipants, self).__init__()
-        assert sport in self.data["sports"], "Sport {} not avaialble".format(
-            sport
-        )
+        assert sport in self.data["sports"], "Sport {} not avaialble".format(sport)
 
         if list_identifier in self.data["sports"][sport]["participants"]:
             dict.__init__(
-                self,
-                self.data["sports"][sport]["participants"][list_identifier]
+                self, self.data["sports"][sport]["participants"][list_identifier]
             )
 
     def is_participant(self, name):
@@ -30,11 +27,8 @@ class LookupParticipants(Lookup, dict):
         """
         parties = self.get("participants")
         for team in parties:
-            if (
-                name.lower() in [
-                    x.lower() for x in team.get("name", {}).values()] or
-                name.lower() in [
-                    x.lower() for x in team.get("aliases", [])]
-            ):
+            if name.lower() in [
+                x.lower() for x in team.get("name", {}).values()
+            ] or name.lower() in [x.lower() for x in team.get("aliases", [])]:
                 return True
         return False

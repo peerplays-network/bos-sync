@@ -4,11 +4,11 @@ from peerplays import PeerPlays
 from bookied_sync.lookup import Lookup
 from bookiesports.exceptions import SportsNotFoundError
 import logging
+
 log = logging.getLogger(__name__)
 
 
 class Testcases(unittest.TestCase):
-
     def setUp(self):
         Lookup._clear()
 
@@ -16,10 +16,9 @@ class Testcases(unittest.TestCase):
         self.lookup = Lookup(
             network="unittests",
             sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
+                os.path.dirname(os.path.realpath(__file__)), "bookiesports"
             ),
-            peerplays_instance=PeerPlays(nobroadcast=True)
+            peerplays_instance=PeerPlays(nobroadcast=True),
         )
         self.assertIsInstance(self.lookup, dict)
         self.assertIsInstance(self.lookup.peerplays, PeerPlays)
@@ -32,8 +31,7 @@ class Testcases(unittest.TestCase):
         lookup = Lookup(
             network="unittests",
             sports_folder=os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "bookiesports"
+                os.path.dirname(os.path.realpath(__file__)), "bookiesports"
             ),
             proposing_account="init0",
             approving_account="init1",

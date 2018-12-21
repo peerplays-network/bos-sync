@@ -2,7 +2,6 @@ from peerplaysbase.operationids import operations
 
 
 class UpdateTransaction(dict):
-
     def __init__(self, transaction):
         """ This class makes it easier for us to deal with the proposals from
             the outside.
@@ -63,7 +62,7 @@ class UpdateTransaction(dict):
             self.get("expiration"),
             len(self.operations),
             {i: self.is_proposal(i) for i, _ in enumerate(self.operations)},
-            {i: self.is_approval(i) for i, _ in enumerate(self.operations)}
+            {i: self.is_approval(i) for i, _ in enumerate(self.operations)},
         )
 
     def get_result(self, op_id=0):

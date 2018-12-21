@@ -16,37 +16,35 @@ class LookupRule(Lookup, dict):
     def __init__(self, sport, rules):
         self.identifier = "{}/{}".format(sport, rules)
         Lookup.__init__(self)
-        assert sport in self.data["sports"], "Sport {} not avaialble".format(
-            sport
-        )
-        assert rules in self.data["sports"][sport]["rules"], \
-            "rules {} not avaialble in sport {}".format(
-                rules, sport)
+        assert sport in self.data["sports"], "Sport {} not avaialble".format(sport)
+        assert (
+            rules in self.data["sports"][sport]["rules"]
+        ), "rules {} not avaialble in sport {}".format(rules, sport)
         # This is a list and not a dictionary!
-        dict.__init__(
-            self,
-            self.data["sports"][sport]["rules"][rules]
-        )
+        dict.__init__(self, self.data["sports"][sport]["rules"][rules])
 
     def test_operation_equal(self, operation, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup
         """
-        test_operation_equal_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_required_keys([
-                "new_description", "new_name"
-            ], [
-                "description", "name"
-            ]),
-            comparators.cmp_all_description(),
-            comparators.cmp_all_name(),
-        ])
+        test_operation_equal_search = kwargs.get(
+            "test_operation_equal_search",
+            [
+                comparators.cmp_required_keys(
+                    ["new_description", "new_name"], ["description", "name"]
+                ),
+                comparators.cmp_all_description(),
+                comparators.cmp_all_name(),
+            ],
+        )
 
-        if all([
-            # compare by using 'all' the funcs in find_id_search
-            func(self, operation)
-            for func in test_operation_equal_search
-        ]):
+        if all(
+            [
+                # compare by using 'all' the funcs in find_id_search
+                func(self, operation)
+                for func in test_operation_equal_search
+            ]
+        ):
             return True
         return False
 
@@ -58,15 +56,17 @@ class LookupRule(Lookup, dict):
                        **ENGLISH**!
         """
         rules = Rules(peerplays_instance=self.peerplays)
-        find_id_search = kwargs.get("test_operation_equal_search", [
-            comparators.cmp_name("en"),
-        ])
+        find_id_search = kwargs.get(
+            "test_operation_equal_search", [comparators.cmp_name("en")]
+        )
         for rule in rules:
-            if all([
-                # compare by using 'all' the funcs in find_id_search
-                func(self, rule)
-                for func in find_id_search
-            ]):
+            if all(
+                [
+                    # compare by using 'all' the funcs in find_id_search
+                    func(self, rule)
+                    for func in find_id_search
+                ]
+            ):
                 return rule["id"]
 
     def is_synced(self):
@@ -85,7 +85,7 @@ class LookupRule(Lookup, dict):
             self.names,
             self.descriptions,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     def propose_update(self):
@@ -96,7 +96,7 @@ class LookupRule(Lookup, dict):
             names=self.names,
             descriptions=self.descriptions,
             account=self.proposing_account,
-            append_to=Lookup.proposal_buffer
+            append_to=Lookup.proposal_buffer,
         )
 
     @property
@@ -111,12 +111,7 @@ class LookupRule(Lookup, dict):
         """
         names = self["name"]
         names.update({"identifier": self["identifier"]})
-        return [
-            [
-                k,
-                v
-            ] for k, v in names.items()
-        ]
+        return [[k, v] for k, v in names.items()]
 
     @property
     def description(self):
@@ -132,18 +127,15 @@ class LookupRule(Lookup, dict):
         # For sake of transparency, we store the grading on the blockchain too
         #
         import json
+
         grading = json.dumps(self["grading"], sort_keys=True)
         data = self["description"]
         data.update(dict(grading=grading))
-        return [
-            [
-                k.strip(),
-                v.strip()
-            ] for k, v in data.items()
-        ]
+        return [[k.strip(), v.strip()] for k, v in data.items()]
 
 
 class LookupRules(LookupRule):
     """ Legacy compatibility
     """
+
     pass

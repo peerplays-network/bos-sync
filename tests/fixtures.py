@@ -6,6 +6,7 @@ from dateutil.parser import parse
 
 from peerplays import PeerPlays
 from peerplays.instance import set_shared_peerplays_instance
+from peerplays.account import Account
 from peerplays.sport import Sports, Sport
 from peerplays.event import Events, Event
 from peerplays.rule import Rules, Rule
@@ -20,19 +21,40 @@ from bookied_sync.lookup import Lookup
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 
+# default wifs key for testing
+wifs = [
+    "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",
+    "5KCBDTcyDqzsqehcb52tW5nU6pXife6V2rX9Yf7c3saYSzbDZ5W",
+]
+wif = wifs[0]
+core_unit = "TEST"
 
-wif = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"
-config = dict(nobroadcast=True)
-ppy = PeerPlays(keys=[wif], nobroadcast=config["nobroadcast"], num_retries=1)
-set_shared_peerplays_instance(ppy)
+# peerplays instance
+peerplays = PeerPlays(
+    "wss://api.ppy-beatrice.blckchnd.com", keys=wifs, nobroadcast=True, num_retries=1
+)
+config = peerplays.config
+
+# Set defaults
+peerplays.set_default_account("init0")
+set_shared_peerplays_instance(peerplays)
+
+# Ensure we are not going to transaction anythin on chain!
+assert peerplays.nobroadcast
+
+# Setup base lookup
 lookup = Lookup(
     proposer="init0",
-    blockchain_instance=ppy,
+    blockchain_instance=peerplays,
     network="unittests",
     sports_folder=os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "bookiesports"
     ),
 )
+# lookup.set_approving_account("init1")
+# lookup.set_proposing_account("init0")
+
+# ensure lookup isn't broadcasting either
 assert lookup.blockchain.nobroadcast
 
 
@@ -68,13 +90,8 @@ def lookup_test_eventgroup(id):
     return LookupEventGroup("Basketball", "NBA")
 
 
-def add_event(data):
-    if "event_group_id" in data:
-        Events._cache[data["event_group_id"]].append(data)
-
-
 def fixture_data():
-    ppy.clear()
+    peerplays.clear()
     BettingMarkets.clear_cache()
     Rules.clear_cache()
     BettingMarketGroups.clear_cache()
@@ -87,15 +104,27 @@ def fixture_data():
     with open(os.path.join(os.path.dirname(__file__), "fixtures.yaml")) as fid:
         data = yaml.safe_load(fid)
 
-    Witnesses._import([Witness(x) for x in data.get("witnesses", [])])
-    Sports._import([Sport(x) for x in data.get("sports", [])])
-    EventGroups._import([EventGroup(x) for x in data.get("eventgroups", [])])
-    Events._import([Event(x) for x in data.get("events", [])])
-    BettingMarketGroups._import(
-        [BettingMarketGroup(x) for x in data.get("bettingmarketgroups", [])]
-    )
-    BettingMarkets._import([BettingMarket(x) for x in data.get("bettingmarkets", [])])
-    Rules._import([Rule(x) for x in data.get("rules", [])])
+    Witnesses.cache_objects([Witness(x) for x in data.get("witnesses", [])])
+    Sports.cache_objects([Sport(x) for x in data.get("sports", [])])
+
+    for evg in data.get("eventgroups", []):
+        EventGroups.cache_objects([EventGroup(evg)], key=evg["sport_id"])
+
+    for event in data.get("events", []):
+        Events.cache_objects([Event(event)], key=event["event_group_id"])
+
+    for bmg in data.get("bettingmarketgroups", []):
+        BettingMarketGroups.cache_objects(
+            [BettingMarketGroup(bmg)], key=bmg["event_id"]
+        )
+
+    for bm in data.get("bettingmarkets", []):
+        BettingMarkets.cache_objects([BettingMarketGroup(bm)], bm["group_id"])
+
+    Rules.cache_objects([Rule(x) for x in data.get("rules", [])])
+    for x in data.get("accounts", []):
+        Account.cache_object(x, x["name"])
+        Account.cache_object(x, x["id"])
 
     proposals = []
     for proposal in data.get("proposals", []):
@@ -124,5 +153,5 @@ def fixture_data():
         }
         proposals.append(Proposal(proposal_data))
 
-    Proposals._import(proposals, "1.2.1")
-    Proposals._import(proposals, "witness-account")
+    Proposals.cache_objects(proposals, "1.2.1")
+    Proposals.cache_objects(proposals, "witness-account")
