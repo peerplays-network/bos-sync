@@ -24,3 +24,10 @@ class MissingMandatoryValue(Exception):
     """
 
     pass
+
+
+class CannotCreateWithParentInProposal(Exception):
+    """ We cannot create new objects with parents sitting in other proposals
+    """
+
+    pass

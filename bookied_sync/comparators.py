@@ -148,7 +148,7 @@ def cmp_status():
     return cmp
 
 
-def cmp_parent(name):
+def cmp_parent(name, allow_proposal=True):
     """ Compare the parent element denoted by ``name`` (e.g. sport_id)
     """
 
@@ -156,6 +156,8 @@ def cmp_parent(name):
         alt_key_name = "new_{}".format(name)
         parent_id = ist.get(name, ist.get(alt_key_name))
         test_parent = soll.valid_object_id(parent_id)
+        if allow_proposal and soll.parent_id[0] == "0":
+            test_parent = False
         return not test_parent or ist.get(name, ist.get(alt_key_name)) == soll.parent_id
 
     return cmp
@@ -222,25 +224,25 @@ def cmp_names(langs=["en"]):
 def cmp_event():
     """ compare event_id
     """
-    return cmp_parent("event_id")
+    return cmp_parent("event_id", allow_proposal=True)
 
 
 def cmp_group():
     """ compare betting market group id
     """
-    return cmp_parent("group_id")
+    return cmp_parent("group_id", allow_proposal=True)
 
 
 def cmp_event_group():
     """ compare event group id
     """
-    return cmp_parent("event_group_id")
+    return cmp_parent("event_group_id", allow_proposal=True)
 
 
 def cmp_sport():
     """ compare sport id
     """
-    return cmp_parent("sport_id")
+    return cmp_parent("sport_id", allow_proposal=True)
 
 
 def cmp_season():

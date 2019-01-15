@@ -6,7 +6,7 @@ from peerplays.account import Account
 from peerplays.proposal import Proposal, Proposals
 from peerplays.witness import Witnesses
 from peerplaysapi.exceptions import OperationInProposalExistsException
-from .exceptions import ObjectNotFoundError
+from .exceptions import ObjectNotFoundError, CannotCreateWithParentInProposal
 from .update import UpdateTransaction
 from bookiesports import BookieSports
 from . import log
@@ -319,6 +319,20 @@ class Lookup(dict, BlockchainInstance):
                             )
                             self._retriggered = True
                             self.update(retriggered=True)
+                        """
+                    # We could reraise this exception, but don't so the
+                    # operations are not interrupted. Instead, the incident
+                    # causing this error should be re-triggered
+                    except CannotCreateWithParentInProposal as e:
+                        log.critical(
+                            "Trying to propose new object but failed: {}\n".format(
+                                str(e)
+                            )
+                            + "Retriggering!"
+                        )
+                        self._retriggered = True
+                        self.update(retriggered=True)
+                        """
                     except Exception as e:
                         log.critical(
                             "Trying to propose new object but failed: {}".format(str(e))
@@ -571,7 +585,7 @@ class Lookup(dict, BlockchainInstance):
         """ Obtain the id of the parent object, skips proposals
         """
         if hasattr(self, "parent"):
-            return self.parent.get_id(skip_proposals=True)
+            return self.parent.get_id(skip_proposals=False)
 
     def get_id(self, skip_proposals=False):
         """ Gets the id of the object on chain
@@ -593,18 +607,16 @@ class Lookup(dict, BlockchainInstance):
         if found:
             return found
 
-        # Try find the id in the pending on-chain proposals
-        # we expect the first proposalthat proposes the
-        # parent object to go through
-        if not skip_proposals:
-            found = list(self.has_pending_new())
-            if found:
-                return found[0]["pid"]  # pid of first return element
-
         # Try find the id in the locally buffered proposals
         found = self.has_buffered_new()  # not a generator
         if found:
             return found[1]
+
+        # Try find from on-chain proposals
+        if not skip_proposals:
+            found = list(self.has_pending_new())
+            if found:
+                return found[0]["pid"]  # pid of first return element
 
         raise ObjectNotFoundError(
             "Object not found on chain: {}: {}".format(
