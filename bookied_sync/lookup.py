@@ -161,6 +161,7 @@ class Lookup(dict, BlockchainInstance):
         Lookup.proposal_buffer = None
 
     def clear(self):
+        self.peerplays.clear()
         self.clear_proposal_buffer()
         self.clear_direct_buffer()
         self.clear_approval_map()
