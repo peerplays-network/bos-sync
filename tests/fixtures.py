@@ -92,6 +92,7 @@ def lookup_test_eventgroup(id):
 
 def fixture_data():
     peerplays.clear()
+    lookup.clear()
     BettingMarkets.clear_cache()
     Rules.clear_cache()
     BettingMarketGroups.clear_cache()

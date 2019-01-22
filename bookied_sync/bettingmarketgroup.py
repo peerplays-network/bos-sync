@@ -1,7 +1,7 @@
 import math
 from .lookup import Lookup
 from .rule import LookupRules
-from .exceptions import MissingMandatoryValue
+from .exceptions import MissingMandatoryValue, CannotCreateWithParentInProposal
 from .utils import dList2Dict
 from peerplays.event import Event
 from peerplays.rule import Rule
@@ -170,9 +170,13 @@ class LookupBettingMarketGroup(Lookup, dict):
         """ Propose operation to create this object
         """
         asset = Asset(self["asset"], peerplays_instance=self.peerplays)
+        if self.parent_id[:5] == "1.10.":
+            raise CannotCreateWithParentInProposal(
+                "Cannot propose with parent pending in proposal"
+            )
         return self.peerplays.betting_market_group_create(
             self.description,
-            event_id=self.event.id,
+            event_id=self.parent_id,
             rules_id=self.rules.id,
             asset=asset["id"],
             delay_before_settling=self.get("delay_before_settling", 0),

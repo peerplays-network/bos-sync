@@ -1,10 +1,7 @@
-from . import log
 from .lookup import Lookup
-from .rule import LookupRules
-from .utils import dList2Dict
 from peerplays.bettingmarket import BettingMarket, BettingMarkets
-from peerplays.bettingmarketgroup import BettingMarketGroup, BettingMarketGroups
 from . import comparators
+from .exceptions import CannotCreateWithParentInProposal
 
 
 class LookupBettingMarket(Lookup, dict):
@@ -130,6 +127,10 @@ class LookupBettingMarket(Lookup, dict):
     def propose_new(self):
         """ Propose operation to create this object
         """
+        if self.parent_id[:5] == "1.10.":
+            raise CannotCreateWithParentInProposal(
+                "Cannot propose with parent pending in proposal"
+            )
         return self.peerplays.betting_market_create(
             description=self.description,
             payout_condition=[],
