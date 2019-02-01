@@ -22,7 +22,7 @@ class LookupSport(Lookup, dict):
         self.identifier = sport
         super(LookupSport, self).__init__()
 
-        if sport.lower() in [x.lower() for x in self.data["sports"]]:
+        if sport in [x for x in self.data["sports"]]:
             # Easy, the sports name is the key
             dict.__init__(self, self.data["sports"][sport])
         else:

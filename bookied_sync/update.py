@@ -1,7 +1,7 @@
 from peerplaysbase.operationids import operations
 
 
-class UpdateTransaction(dict):
+class UpdateTransaction(dict):  # pragma: no cover
     def __init__(self, transaction):
         """ This class makes it easier for us to deal with the proposals from
             the outside.

@@ -182,19 +182,19 @@ class Testcases(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.lookup.find_id(find_id_search=[comparators.cmp_fuzzy(0)]), "1.24.218"
+            self.lookup.find_id(find_id_search=[comparators.cmp_dynamic_bmg_fuzzy(0)]), "1.24.218"
         )
 
         # No match because   floor(4.9) + 0.5 = 4.5
         self.lookup.set_overunder(4.9)
-        self.assertFalse(self.lookup.find_id(find_id_search=[comparators.cmp_fuzzy(0)]))
+        self.assertFalse(self.lookup.find_id(find_id_search=[comparators.cmp_dynamic_bmg_fuzzy(0)]))
 
         # Match!
         self.lookup.set_overunder(5.0)
-        self.assertTrue(self.lookup.find_id(find_id_search=[comparators.cmp_fuzzy(0)]))
+        self.assertTrue(self.lookup.find_id(find_id_search=[comparators.cmp_dynamic_bmg_fuzzy(0)]))
 
         self.assertTrue(
-            self.lookup.find_id(find_id_search=[comparators.cmp_fuzzy(0.51)])
+            self.lookup.find_id(find_id_search=[comparators.cmp_dynamic_bmg_fuzzy(0.51)])
         )
 
     def test_fuzzy_operation_compare(self):

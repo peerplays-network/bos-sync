@@ -12,9 +12,11 @@ identifier: Basketball
 name:
     en: Basketball
     sen: Basketball
+    sv: Bsktbll
 
 aliases:
  - Basketball
+ - askba
 
 # After creation, of the sports object, we will end up with an id
 id:

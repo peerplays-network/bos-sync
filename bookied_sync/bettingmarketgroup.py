@@ -300,6 +300,9 @@ class LookupBettingMarketGroup(Lookup, dict):
 
     @staticmethod
     def is_dynamic_type(x, typ):
+        """ is 'x' a special type of dynamic market?
+            Could be Handicap or Overunder
+        """
         if LookupBettingMarketGroup.is_hc_type(typ):
             return LookupBettingMarketGroup.is_hc_type(x)
         else:
@@ -307,13 +310,19 @@ class LookupBettingMarketGroup(Lookup, dict):
 
     @staticmethod
     def is_hc_type(x):
-        return x == "hc" or x == "1x2_hc"
+        """ Is this one of our types of Handicap markets
+        """
+        return x in ["hc", "1x2_hc"]
 
     @staticmethod
     def is_ou_type(x):
+        """ Is this one of our types of Overunder
+        """
         return x == "ou"
 
     def is_dynamic(self, operation):
+        """ is this BMG a dynamic one?
+        """
         if "description" not in operation:
             return False
         description = dList2Dict(operation["description"])
