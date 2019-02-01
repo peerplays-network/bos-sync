@@ -71,14 +71,6 @@ class LookupSport(Lookup, dict):
         for e in self["participants"]:
             yield LookupParticipants(self.identifier, e)
 
-    @property
-    def bettingmarketgroups(self):
-        """ Return isntances of LookupBettingMarketGroup for each betting market
-            group of this sport
-        """
-        for e in self["bettingmarketgroups"]:
-            yield LookupBettingMarketGroup(self.identifier, e)
-
     def test_operation_equal(self, sport, **kwargs):
         """ This method checks if an object or operation on the blockchain
             has the same content as an object in the  lookup

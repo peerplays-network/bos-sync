@@ -27,6 +27,9 @@ class Testcases(unittest.TestCase):
         self.assertIn("sports", self.lookup.data)
         self.assertTrue(self.lookup.data["sports"])
 
+        self.lookup.set_blocking(1)
+        self.lookup.set_blocking(0)
+
     def test_proper_accounts(self):
         lookup = Lookup(
             network="unittests",

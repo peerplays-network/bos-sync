@@ -13,6 +13,8 @@ from peerplays.blockchainobject import BlockchainObject, ObjectCache
 from peerplays.instance import set_shared_blockchain_instance
 from bookied_sync.lookup import Lookup
 from bookied_sync.sport import LookupSport, ObjectNotFoundInLookup
+from bookied_sync.rule import LookupRule
+from bookied_sync.participant import LookupParticipants
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
@@ -44,6 +46,18 @@ class Testcases(unittest.TestCase):
         self.assertEqual(LookupSport("askba")["identifier"], "Basketball")
         with self.assertRaises(ObjectNotFoundInLookup):
             LookupSport("NONEXISTING")
+
+    def test_eventgroups(self):
+        for i in self.lookup.eventgroups:
+            self.assertTrue(isinstance(i, LookupEventGroup))
+
+    def test_rules(self):
+        for i in self.lookup.rules:
+            self.assertTrue(isinstance(i, LookupRule))
+
+    def test_participants(self):
+        for i in self.lookup.participants:
+            self.assertTrue(isinstance(i, LookupParticipants))
 
     def test_test_operation_equal(self):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))

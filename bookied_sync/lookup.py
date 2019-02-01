@@ -72,7 +72,7 @@ class Lookup(dict, BlockchainInstance):
             pass
         elif "default_account" in self.blockchain.config:
             proposing_account = self.blockchain.config["default_account"]
-        else:
+        else:  # pragma: no cover
             log.error("No proposing account known")
             raise Exception("No proposing account known!")
 
@@ -82,7 +82,7 @@ class Lookup(dict, BlockchainInstance):
             pass
         elif "default_account" in self.blockchain.config:
             approving_account = self.blockchain.config["default_account"]
-        else:
+        else:  # pragma: no cover
             log.error("No approving account known")
             raise Exception("No approving account known!")
 
@@ -186,7 +186,9 @@ class Lookup(dict, BlockchainInstance):
         """
         txs = list()
 
-        if Lookup.direct_buffer is not None or Lookup.proposal_buffer is not None:
+        if (
+            Lookup.direct_buffer is not None or Lookup.proposal_buffer is not None
+        ):  # pragma: no cover
             log.info("Broadcasting")
             if Lookup.direct_buffer is not None and not Lookup.direct_buffer.is_empty():
                 log.info(str(Lookup.direct_buffer))
@@ -207,7 +209,7 @@ class Lookup(dict, BlockchainInstance):
         self.clear_direct_buffer()
         return txs
 
-    def proposal_transactions(self):
+    def proposal_transactions(self):  # pragma: no cover
         return Lookup.proposal_buffer.parent.json()
 
     def proposal_operations(self):
@@ -625,7 +627,7 @@ class Lookup(dict, BlockchainInstance):
         )
         return found
 
-    def is_bookiesports_in_sync(self):
+    def is_bookiesports_in_sync(self):  # pragma: no cover
         """ Test if bookiesports is in sync
         """
         for sport in self.list_sports():
@@ -644,7 +646,7 @@ class Lookup(dict, BlockchainInstance):
 
         return True
 
-    def sync_bookiesports(self):
+    def sync_bookiesports(self):  # pragma: no cover
         """ Sync eventgroups and sports according to bookiesports/lookup
         """
         # Go through all sports
