@@ -38,7 +38,7 @@ class LookupBettingMarketGroup(Lookup, dict):
                     "A value for '{}' is mandatory".format(mandatory)
                 )
         self.identifier = "{}/{}".format(
-            dList2Dict(event.names)["en"], dList2Dict(self.description)["en"]
+            dList2Dict(event.names)["en"], self.get("description", {}).get("en")
         )
 
     @property
