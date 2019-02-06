@@ -12,7 +12,9 @@ from peerplays.bettingmarketgroup import BettingMarketGroups
 from peerplays.blockchainobject import BlockchainObject, ObjectCache
 from peerplays.instance import set_shared_blockchain_instance
 from bookied_sync.lookup import Lookup
-from bookied_sync.sport import LookupSport
+from bookied_sync.sport import LookupSport, ObjectNotFoundInLookup
+from bookied_sync.rule import LookupRule
+from bookied_sync.participant import LookupParticipants
 from bookied_sync.eventgroup import LookupEventGroup
 from bookied_sync.event import LookupEvent
 from bookied_sync.bettingmarketgroup import LookupBettingMarketGroup
@@ -24,18 +26,38 @@ sport_id = "1.20.1"
 
 test_operation_dict = {
     "id": sport_id,
-    "name": [["en", "Basketball"], ["identifier", "Basketball"], ["sen", "Basketball"]],
+    "name": [
+        ["en", "Basketball"],
+        ["identifier", "Basketball"],
+        ["sen", "Basketball"],
+        ["sv", "Bsktbll"],
+    ],
 }
 
 
 class Testcases(unittest.TestCase):
     def setUp(self):
         fixture_data()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        fixture_data()
         self.lookup = LookupSport("Basketball")
+
+    def test_find_sport(self):
+        self.assertEqual(LookupSport("Bsktbll")["identifier"], "Basketball")
+        self.assertEqual(LookupSport("BASKETBALL")["identifier"], "Basketball")
+        self.assertEqual(LookupSport("askba")["identifier"], "Basketball")
+        with self.assertRaises(ObjectNotFoundInLookup):
+            LookupSport("NONEXISTING")
+
+    def test_eventgroups(self):
+        for i in self.lookup.eventgroups:
+            self.assertTrue(isinstance(i, LookupEventGroup))
+
+    def test_rules(self):
+        for i in self.lookup.rules:
+            self.assertTrue(isinstance(i, LookupRule))
+
+    def test_participants(self):
+        for i in self.lookup.participants:
+            self.assertTrue(isinstance(i, LookupParticipants))
 
     def test_test_operation_equal(self):
         self.assertTrue(self.lookup.test_operation_equal(test_operation_dict))

@@ -2,7 +2,7 @@ from peerplays.event import Event
 from .utils import dList2Dict
 
 
-def cmp_fuzzy(spread=1):
+def cmp_dynamic_bmg_fuzzy(spread=1):
     """ This method returns a method!
 
         It is used to obtain a compare method that contains a given
