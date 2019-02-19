@@ -3,7 +3,7 @@
 from setuptools import setup
 import sys
 
-__VERSION__ = "0.3.8"
+__VERSION__ = "0.4.0"
 
 assert sys.version_info[0] == 3, "We require Python > 3"
 
@@ -15,11 +15,9 @@ setup(
     ),
     long_description=open("README.md").read(),
     download_url="https://github.com/pbsa/bos-sync/tarball/" + __VERSION__,
-    author="Blockchain BV",
-    author_email="info@blockchainbv.com",
-    maintainer="Fabian Schuh",
-    maintainer_email="Fabian.Schuh@BlockchainProjectsBV.com",
-    url="http://pbsa.info",
+    author='Peerplays Community',
+    maintainer='Peerplays Community',
+    url='http://pbsa.info',
     keywords=["peerplays", "bos"],
     packages=["bookied_sync"],
     classifiers=[
