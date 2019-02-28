@@ -105,9 +105,7 @@ class LookupEvent(Lookup, dict):
         return all(self.participants.is_participant(t) for t in self["teams"])
 
     @classmethod
-    def find_event(
-        cls, sport_identifier, eventgroup_identifier, teams, start_time, refresh=True
-    ):
+    def find_event(cls, sport_identifier, eventgroup_identifier, teams, start_time):
         """ This class method is used to find an event by providing:
 
             :param str sport_identifier: Identifier string for the sport
@@ -120,12 +118,6 @@ class LookupEvent(Lookup, dict):
         sport = LookupSport(sport_identifier)
         eventgroup = LookupEventGroup(sport, eventgroup_identifier)
         events = Events(eventgroup.id)  # This is a pypeerplays class!
-        # We need to allow refreshes of the internal pypeerplays cache.
-        # The cache reduces the API calls to the backend and thus latency.
-        # However, to be sure the event hasn't been created since before the
-        # cache has expired, we force a refresh from the blockchain.
-        if refresh:
-            events.refresh()
         # Format teams into proper names according to event scheme
         names = substitution(teams, eventgroup["eventscheme"]["name"])
         names = [[k, v] for k, v in names.items()]
