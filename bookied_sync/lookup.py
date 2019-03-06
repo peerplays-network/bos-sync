@@ -698,7 +698,10 @@ class Lookup(dict, BlockchainInstance):
         """
         test = id and id[0] == "1" and id[:4] != "1.10"
         if test and fetch:
-            fetch(id)
+            try:
+                fetch(id)
+            except Exception:
+                return False
         return test
 
     # Prototypes #############################################################
