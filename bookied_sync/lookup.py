@@ -630,21 +630,35 @@ class Lookup(dict, BlockchainInstance):
     def is_bookiesports_in_sync(self):  # pragma: no cover
         """ Test if bookiesports is in sync
         """
+        in_sync = True
         for sport in self.list_sports():
             if not sport.is_synced():
-                return False
+                log.warning(
+                    "Not in sync: Sport {} ({})".format(
+                        sport["identifier"], sport["id"]
+                    )
+                )
+                in_sync = False
 
             # Go through all event groups of the sport
             for e in sport.eventgroups:
                 if not e.is_synced():
-                    return False
+                    log.warning(
+                        "Not in sync: Event Group {} ({})".format(
+                            e["identifier"], e["id"]
+                        )
+                    )
+                    in_sync = False
 
             # Go through all the rules linked in the sport
             for r in sport.rules:
                 if not r.is_synced():
-                    return False
+                    log.warning(
+                        "Not in sync: Rule {} ({})".format(r["identifier"], r["id"])
+                    )
+                    in_sync = False
 
-        return True
+        return in_sync
 
     def sync_bookiesports(self):  # pragma: no cover
         """ Sync eventgroups and sports according to bookiesports/lookup
@@ -684,7 +698,10 @@ class Lookup(dict, BlockchainInstance):
         """
         test = id and id[0] == "1" and id[:4] != "1.10"
         if test and fetch:
-            fetch(id)
+            try:
+                fetch(id)
+            except Exception:
+                return False
         return test
 
     # Prototypes #############################################################
