@@ -244,6 +244,10 @@ def cmp_sport():
     """
     return cmp_parent("sport_id", allow_proposal=True)
 
+def cmp_asset():
+    """ compare asset
+    """
+    return cmp_parent("asset", allow_proposal=True)
 
 def cmp_season():
     """ compare the content of season
