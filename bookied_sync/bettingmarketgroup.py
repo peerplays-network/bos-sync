@@ -72,6 +72,7 @@ class LookupBettingMarketGroup(Lookup, dict):
                 ),
                 comparators.cmp_status(),
                 comparators.cmp_event(),
+                comparators.cmp_asset(),
                 comparators.cmp_all_description(),
             ],
         )
@@ -133,7 +134,8 @@ class LookupBettingMarketGroup(Lookup, dict):
             "find_id_search",
             [
                 # We compare only the 'eng' content by default
-                comparators.cmp_description("en")
+                comparators.cmp_description("en"),
+                comparators.cmp_asset()
             ],
         )
 
@@ -184,6 +186,7 @@ class LookupBettingMarketGroup(Lookup, dict):
             account=self.proposing_account,
             append_to=Lookup.proposal_buffer,
         )
+
 
     def propose_update(self):
         """ Propose to update this object to match  lookup
