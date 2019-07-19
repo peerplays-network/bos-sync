@@ -2,7 +2,7 @@ from .lookup import Lookup
 from peerplays.bettingmarket import BettingMarket, BettingMarkets
 from . import comparators
 from .exceptions import CannotCreateWithParentInProposal
-
+from . import log
 
 class LookupBettingMarket(Lookup, dict):
     """ Lookup Class for Betting Market
@@ -50,6 +50,7 @@ class LookupBettingMarket(Lookup, dict):
                 ),
                 comparators.cmp_status(),
                 comparators.cmp_group(),
+                comparators.cmp_asset(),
                 comparators.cmp_all_description(),
             ],
         )
@@ -101,7 +102,8 @@ class LookupBettingMarket(Lookup, dict):
             "find_id_search",
             [
                 # We compare only the 'eng' content by default
-                comparators.cmp_description("en")
+                comparators.cmp_description("en"),
+                comparators.cmp_asset()
             ],
         )
 
