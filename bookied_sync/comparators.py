@@ -247,7 +247,14 @@ def cmp_sport():
 def cmp_asset():
     """ compare asset
     """
-    return cmp_parent("asset", allow_proposal=True)
+    def cmp(soll, ist):
+        return (
+            not bool(soll.get("asset"))
+            or not bool(ist.get("asset"))
+            or ist.get("asset") == soll.get("asset")
+        )
+
+    return cmp
 
 def cmp_season():
     """ compare the content of season
