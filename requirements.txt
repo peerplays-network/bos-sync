@@ -4,3 +4,6 @@ bookiesports
 pyyaml
 colorlog
 dateutils
+
+ecdsa>=0.14 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=1.25.9 # not directly required, pinned by Snyk to avoid a vulnerability
